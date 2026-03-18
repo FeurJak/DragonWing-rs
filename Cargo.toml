@@ -12,6 +12,7 @@ members = [
     # Core crates (publishable to crates.io)
     "crates/dragonwing-crypto",
     "crates/dragonwing-led-matrix",
+    "crates/dragonwing-remote-iot",
     "crates/dragonwing-rpc",
     "crates/dragonwing-spi",
     "crates/dragonwing-spi-router",
@@ -20,6 +21,7 @@ members = [
     # MPU demos (QRB2210 Linux) - can be built with cargo
     "demos/mpu/pqc-client",
     "demos/mpu/mlkem-client",
+    "demos/mpu/remote-iot",
     "demos/mpu/weather-display",
 ]
 
@@ -48,6 +50,7 @@ categories = ["embedded", "cryptography", "no-std"]
 # Internal crates
 dragonwing-crypto = { path = "crates/dragonwing-crypto", version = "0.1.0" }
 dragonwing-led-matrix = { path = "crates/dragonwing-led-matrix", version = "0.1.0" }
+dragonwing-remote-iot = { path = "crates/dragonwing-remote-iot", version = "0.1.0" }
 dragonwing-rpc = { path = "crates/dragonwing-rpc", version = "0.1.0" }
 dragonwing-spi = { path = "crates/dragonwing-spi", version = "0.1.0" }
 dragonwing-spi-router = { path = "crates/dragonwing-spi-router", version = "0.1.0" }

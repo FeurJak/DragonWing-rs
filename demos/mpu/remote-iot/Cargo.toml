@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# Remote IoT Demo - Connect phone via Arduino IoT Companion App
+#
+# This demo runs on the Arduino Uno Q's Linux MPU (QRB2210) and
+# allows phones to connect and stream sensor data via the Arduino
+# IoT Remote app.
+
+[package]
+name = "remote-iot-demo"
+version = "0.1.0"
+edition = "2021"
+description = "Demo for Arduino IoT Companion App integration"
+license = "Apache-2.0 OR MIT"
+
+[[bin]]
+name = "remote-iot-demo"
+path = "src/main.rs"
+
+[dependencies]
+# Remote IoT library
+dragonwing-remote-iot = { path = "../../../crates/dragonwing-remote-iot" }
+
+# Async runtime
+tokio = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+
+# Logging
+log = { workspace = true }
+env_logger = { workspace = true }
+
+# CLI arguments
+clap = { workspace = true }
