@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# DragonWing RPC - Cross-platform MessagePack-RPC for Arduino Uno Q
+#
+# A unified crate supporting both MCU (STM32U585) and MPU (QRB2210 Linux)
+# targets for bidirectional RPC communication.
+
+[package]
+name = "dragonwing-rpc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Cross-platform MessagePack-RPC for Arduino Uno Q"
+repository = "https://github.com/AnomalyCo/DragonWing-rs"
+keywords = ["arduino", "rpc", "messagepack", "embedded", "no-std"]
+categories = ["embedded", "no-std", "hardware-support", "network-programming"]
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = []
+# MCU feature: enables no_std server/bridge for STM32U585 (Zephyr RTOS)
+mcu = []
+# MPU feature: enables std async client for QRB2210 Linux
+mpu = ["std", "dep:tokio", "dep:rmp-serde", "dep:rmpv", "dep:thiserror"]
+# Standard library support
+std = []
+
+[dependencies]
+# MPU dependencies (optional - only enabled with "mpu" feature)
+tokio = { workspace = true, optional = true }
+rmp-serde = { workspace = true, optional = true }
+rmpv = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

@@ -1,0 +1,15 @@
+/*
+ * Device Tree Overlay for Arduino Uno Q RPC Demo
+ * 
+ * This overlay configures LPUART1 for RPC communication with the Linux MPU.
+ * LPUART1 is connected to Serial1 on Arduino and the QRB2210 Linux processor.
+ */
+
+/* Configure LPUART1 for RPC communication
+ * Default baud rate is 115200 (set in base board DTS)
+ * The RPC bridge uses this UART for MessagePack-RPC protocol
+ */
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};

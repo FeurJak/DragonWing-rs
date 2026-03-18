@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# DragonWing SPI - Cross-platform SPI communication for Arduino Uno Q
+
+[package]
+name = "dragonwing-spi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["spi", "embedded", "arduino", "communication"]
+categories = ["embedded", "hardware-support"]
+description = "Cross-platform SPI communication library for Arduino Uno Q"
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = []
+
+# MCU peripheral (slave) mode - no_std, Zephyr-based
+mcu = []
+
+# MPU controller (master) mode - std, Linux spidev
+mpu = ["std", "dep:spidev"]
+std = []
+
+[dependencies]
+# MPU dependencies (Linux SPI)
+spidev = { version = "0.6", optional = true }

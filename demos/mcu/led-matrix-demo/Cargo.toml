@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# LED Matrix Demo Application for Arduino Uno Q
+
+[package]
+# This must be rustapp for now (required by Zephyr build system).
+name = "rustapp"
+version = "0.1.0"
+edition = "2021"
+description = "LED Matrix demo on Arduino Uno Q using Rust and Zephyr RTOS"
+license = "Apache-2.0 OR MIT"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+zephyr = "0.1.0"
+log = "0.4.22"
+dragonwing-led-matrix = { path = "../../../crates/dragonwing-led-matrix" }
+
+[build-dependencies]
+zephyr-build = "0.1.0"

@@ -1,0 +1,45 @@
+[package]
+name = "dragonwing-spi-router"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "SPI-based RPC router for DragonWing (Linux MPU side)"
+keywords = ["spi", "rpc", "messagepack", "linux", "embedded"]
+categories = ["embedded", "network-programming"]
+
+[[bin]]
+name = "spi-router"
+path = "src/main.rs"
+
+[dependencies]
+# SPI access
+spidev = "0.6"
+
+# Async runtime
+tokio.workspace = true
+
+# MessagePack
+rmp = "0.8"
+rmp-serde.workspace = true
+rmpv = { workspace = true, features = ["with-serde"] }
+serde.workspace = true
+
+# Logging
+log.workspace = true
+env_logger.workspace = true
+
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# CLI
+clap.workspace = true
+
+# Signal handling
+ctrlc = "3.4"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true

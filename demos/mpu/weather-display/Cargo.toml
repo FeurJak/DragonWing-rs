@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# Weather Display - Linux application for Arduino Uno Q
+
+[package]
+name = "weather-display"
+version = "0.1.0"
+edition = "2021"
+description = "Fetches weather data and displays on LED matrix via RPC"
+license = "Apache-2.0 OR MIT"
+
+[[bin]]
+name = "weather-display"
+path = "src/main.rs"
+
+[dependencies]
+# RPC client
+dragonwing-rpc = { path = "../../../crates/dragonwing-rpc", features = ["mpu"] }
+
+# HTTP client for weather API (rustls for cross-compilation)
+reqwest = { version = "0.12", default-features = false, features = ["json", "blocking", "rustls-tls"] }
+
+# JSON parsing
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# MessagePack values
+rmpv = "1.3"
+
+# Error handling
+anyhow = "1.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# CLI arguments
+clap = { version = "4.5", features = ["derive"] }

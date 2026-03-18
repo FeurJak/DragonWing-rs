@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# RPC Demo Application for Arduino Uno Q
+
+[package]
+name = "rustapp"
+version = "0.1.0"
+edition = "2021"
+description = "RPC demo on Arduino Uno Q using Rust and Zephyr RTOS"
+license = "Apache-2.0 OR MIT"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+zephyr = "0.1.0"
+log = "0.4.22"
+dragonwing-rpc = { path = "../../../crates/dragonwing-rpc", features = ["mcu"] }
+
+[build-dependencies]
+zephyr-build = "0.1.0"

@@ -1,0 +1,47 @@
+# Build artifacts
+/target/
+**/target/
+/output/
+
+# Cargo
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Zephyr build artifacts
+/build/
+**/build/
+twister-out*/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Rust
+*.rs.bk
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker/*.local
+
+# Temporary files
+*.tmp
+*.temp

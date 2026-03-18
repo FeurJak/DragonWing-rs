@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# ML-KEM Demo - Post-quantum key exchange demonstration
+# MCU firmware for Arduino Uno Q
+
+[package]
+# Zephyr requires the package name to be "rustapp"
+name = "rustapp"
+version = "0.1.0"
+edition = "2021"
+description = "ML-KEM post-quantum key exchange demo for Arduino Uno Q"
+license = "Apache-2.0 OR MIT"
+authors = ["DragonWing Team"]
+
+[lib]
+crate-type = ["staticlib"]
+path = "src/lib.rs"
+
+[dependencies]
+# Zephyr RTOS bindings
+zephyr = "0.1.0"
+log = "0.4"
+
+# DragonWing libraries
+dragonwing-led-matrix = { path = "../../../crates/dragonwing-led-matrix" }
+dragonwing-rpc = { path = "../../../crates/dragonwing-rpc", features = ["mcu"] }
+dragonwing-crypto = { path = "../../../crates/dragonwing-crypto" }
+
+[profile.release]
+opt-level = "s"
+lto = true
+debug = false

@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# RPC Server Application for Arduino Uno Q
+
+[package]
+# This must be rustapp for now (required by Zephyr build system).
+name = "rustapp"
+version = "0.1.0"
+edition = "2021"
+description = "RPC Server with LED matrix control on Arduino Uno Q"
+license = "Apache-2.0 OR MIT"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+zephyr = "0.1.0"
+log = "0.4"
+dragonwing-led-matrix = { path = "../../../crates/dragonwing-led-matrix" }
+dragonwing-rpc = { path = "../../../crates/dragonwing-rpc", features = ["mcu"] }
+
+[build-dependencies]
+zephyr-build = "0.1.0"

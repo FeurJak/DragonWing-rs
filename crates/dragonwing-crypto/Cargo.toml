@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# DragonWing Cryptography Library
+# Post-quantum and classical cryptography for Arduino Uno Q (STM32U585 MCU)
+
+[package]
+name = "dragonwing-crypto"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["cryptography", "post-quantum", "embedded", "no-std", "arduino"]
+categories = ["cryptography", "no-std", "embedded"]
+description = "Post-quantum and classical cryptography library for Arduino Uno Q"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+# Post-quantum crypto (pinned commit for reproducibility)
+libcrux-iot-ml-kem = { workspace = true, features = ["mlkem768"], optional = true }
+libcrux-iot-ml-dsa = { workspace = true, features = ["mldsa65"], optional = true }
+libcrux-iot-sha3 = { workspace = true, optional = true }
+libcrux-secrets = { workspace = true }
+
+# Classical crypto (for SAGA anonymous credentials)
+curve25519-dalek = { workspace = true }
+sha2 = { workspace = true }
+rand_core = { workspace = true }
+
+[features]
+default = ["mlkem768", "mldsa65"]
+
+# ML-KEM parameter sets
+mlkem512 = ["libcrux-iot-ml-kem/mlkem512", "dep:libcrux-iot-ml-kem"]
+mlkem768 = ["libcrux-iot-ml-kem/mlkem768", "dep:libcrux-iot-ml-kem"]
+mlkem1024 = ["libcrux-iot-ml-kem/mlkem1024", "dep:libcrux-iot-ml-kem"]
+
+# ML-DSA parameter sets
+mldsa44 = ["libcrux-iot-ml-dsa/mldsa44", "dep:libcrux-iot-ml-dsa"]
+mldsa65 = ["libcrux-iot-ml-dsa/mldsa65", "dep:libcrux-iot-ml-dsa"]
+mldsa87 = ["libcrux-iot-ml-dsa/mldsa87", "dep:libcrux-iot-ml-dsa"]
+
+# Classical cryptography (via standalone C implementations)
+ed25519 = []
+x25519 = []
+
+# Hybrid post-quantum key encapsulation
+xwing = ["x25519", "mlkem768", "dep:libcrux-iot-sha3"]
+
+# Authenticated encryption (via mbedTLS)
+xchacha20poly1305 = ["rng"]
+
+# SAGA anonymous credentials (BBS-style MAC scheme)
+# Pure Rust implementation using curve25519-dalek
+saga = ["rng"]
+
+# SAGA + X-Wing hybrid protocol for credential-protected PQ key exchange
+saga_xwing = ["saga", "xwing", "xchacha20poly1305"]
+
+# Hardware RNG (always needed for secure crypto)
+rng = []
+
+# PSA Secure Storage and Crypto Key Management
+# Provides:
+# - psa::its - Internal Trusted Storage for encrypted data
+# - psa::crypto - Key generation, import, export, destruction
+psa = []

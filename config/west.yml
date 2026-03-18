@@ -1,0 +1,39 @@
+# West Manifest for Arduino Libraries Rust
+#
+# This manifest sets up a Zephyr workspace with Rust language support
+# for building the LED Matrix demo and other examples.
+#
+# Usage:
+#   west init -l .
+#   west update
+#   west build -b arduino_uno_q examples/led-matrix-demo
+
+manifest:
+  version: "1.0"
+
+  remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
+
+  defaults:
+    remote: zephyrproject-rtos
+
+  projects:
+    # Zephyr RTOS - main project
+    - name: zephyr
+      revision: v4.0.0
+      import:
+        # Only import necessary HAL modules to reduce workspace size
+        name-allowlist:
+          - cmsis
+          - cmsis_6
+          - hal_stm32
+          - picolibc
+
+    # Rust language support for Zephyr
+    - name: zephyr-lang-rust
+      revision: main
+      path: modules/lib/zephyr-lang-rust
+
+  self:
+    path: .

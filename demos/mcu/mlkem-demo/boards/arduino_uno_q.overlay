@@ -1,0 +1,34 @@
+/*
+ * Device Tree Overlay for Arduino Uno Q RPC Server
+ * 
+ * This overlay configures:
+ * 1. SPI3 peripheral (slave) for communication with Linux MPU
+ * 2. TIM17 counter for LED matrix multiplexing
+ */
+
+/* Add SPI slave device to SPI3 */
+&spi3 {
+	device0: device@0 {
+		compatible = "zephyr,spi-slave";
+		reg = <0>;
+		zephyr,deferred-init;
+	};
+};
+
+/* Enable TIM17 counter for LED matrix timing */
+&timers17 {
+	status = "okay";
+	st,prescaler = <4>;
+
+	counter_matrix: counter {
+		status = "okay";
+		label = "LED_MATRIX_COUNTER";
+	};
+};
+
+/* The LED matrix uses GPIO port F pins PF0-PF10 for charlieplexing.
+ * These are configured in the zephyr,user node in the base board DTS.
+ * 
+ * LED Matrix pin mapping (from ArduinoCore-zephyr):
+ *   PF0-PF10: 11 charlieplex control pins for 104 LEDs
+ */

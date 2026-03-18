@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# Cryptography Demo - MCU firmware for Arduino Uno Q
+#
+# Demonstrates:
+# - ML-KEM 768 key encapsulation (FIPS 203)
+# - ML-DSA 65 digital signatures (FIPS 204)
+# - Ed25519 digital signatures (RFC 8032)
+# - X-Wing hybrid PQ KEM (ML-KEM + X25519)
+# - XChaCha20-Poly1305 AEAD encryption
+# - SAGA anonymous credentials
+# - PSA Secure Storage
+
+[package]
+# Zephyr requires the package name to be "rustapp"
+name = "rustapp"
+version = "0.1.0"
+edition = "2021"
+description = "Cryptography demo for Arduino Uno Q (ML-KEM + ML-DSA + Ed25519)"
+license = "Apache-2.0 OR MIT"
+authors = ["DragonWing Team"]
+
+[lib]
+crate-type = ["staticlib"]
+path = "src/lib.rs"
+
+[dependencies]
+# Zephyr RTOS bindings
+zephyr = "0.1.0"
+log = "0.4"
+
+# DragonWing libraries
+dragonwing-led-matrix = { path = "../../../crates/dragonwing-led-matrix" }
+dragonwing-rpc = { path = "../../../crates/dragonwing-rpc", features = ["mcu"] }
+dragonwing-crypto = { path = "../../../crates/dragonwing-crypto", features = ["ed25519", "xwing", "xchacha20poly1305", "saga", "saga_xwing", "psa"] }
+dragonwing-zcbor = { path = "../../../crates/dragonwing-zcbor", features = ["cose"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+debug = false

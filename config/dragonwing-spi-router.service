@@ -1,0 +1,24 @@
+[Unit]
+Description=DragonWing SPI Router - MessagePack-RPC over SPI
+Documentation=https://github.com/AnomalyCo/DragonWing-rs
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/home/arduino/spi-router --unix-socket /tmp/arduino-spi-router.sock --spi-device /dev/spidev0.0 --spi-speed 1000000
+# Wait for socket to be created, then make it world-writable so non-root users can connect
+ExecStartPost=/bin/sleep 1
+ExecStartPost=/bin/chmod 666 /tmp/arduino-spi-router.sock
+Restart=on-failure
+RestartSec=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dragonwing-spi-router
+
+[Install]
+WantedBy=multi-user.target

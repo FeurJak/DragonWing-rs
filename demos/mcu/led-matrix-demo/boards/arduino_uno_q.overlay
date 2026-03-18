@@ -1,0 +1,24 @@
+/*
+ * Device Tree Overlay for Arduino Uno Q LED Matrix Demo
+ * 
+ * This overlay enables the TIM17 counter used for LED matrix multiplexing
+ * and configures the GPIO port F pins used for charlieplexing.
+ */
+
+/* Enable TIM17 counter for LED matrix timing */
+&timers17 {
+	status = "okay";
+	st,prescaler = <4>;
+
+	counter_matrix: counter {
+		status = "okay";
+		label = "LED_MATRIX_COUNTER";
+	};
+};
+
+/* The LED matrix uses GPIO port F pins PF0-PF10 for charlieplexing.
+ * These are configured in the zephyr,user node in the base board DTS.
+ * 
+ * LED Matrix pin mapping (from ArduinoCore-zephyr):
+ *   PF0-PF10: 11 charlieplex control pins for 104 LEDs
+ */

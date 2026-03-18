@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# DragonWing LED Matrix Library
+#
+# A Rust driver for the 8x13 charlieplexed LED matrix on the Arduino Uno Q.
+# Requires Zephyr RTOS - MCU only, no_std.
+
+[package]
+name = "dragonwing-led-matrix"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "8x13 LED matrix driver for Arduino Uno Q"
+repository.workspace = true
+keywords = ["arduino", "led-matrix", "zephyr", "embedded", "no-std"]
+categories = ["embedded", "no-std", "hardware-support"]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+# No external dependencies - uses FFI to Zephyr C functions
+
+[features]
+default = []

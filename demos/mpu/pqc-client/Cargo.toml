@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# PQC Client - Linux-side post-quantum cryptography demo
+# Combines ML-KEM key exchange with ML-DSA signature verification
+
+[package]
+name = "pqc-client"
+version = "0.1.0"
+edition = "2021"
+description = "Linux client for PQC demo with Arduino Uno Q (ML-KEM + ML-DSA)"
+license = "Apache-2.0 OR MIT"
+
+[[bin]]
+name = "pqc-client"
+path = "src/main.rs"
+
+[dependencies]
+# RPC client for communicating with MCU
+dragonwing-rpc = { path = "../../../crates/dragonwing-rpc", features = ["mpu"] }
+
+# ML-KEM implementation (standard libcrux for Linux - from crates.io)
+libcrux-ml-kem = { version = "0.0.7", default-features = false, features = ["mlkem768", "std"] }
+
+# ML-DSA / Dilithium implementation (pqcrypto)
+pqcrypto-dilithium = { version = "0.5.0" }
+pqcrypto-traits = { version = "0.3.5" }
+
+# MessagePack values
+rmpv = "1.3"
+
+# Error handling
+anyhow = "1.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# CLI arguments
+clap = { version = "4.5", features = ["derive"] }
+
+# Random number generation
+rand = "0.9"
+
+# Hex encoding for display
+hex = "0.4"

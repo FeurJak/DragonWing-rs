@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# DragonWing zcbor - Rust wrapper for Zephyr's zcbor CBOR library
+#
+# This library provides safe Rust bindings to zcbor, a low-footprint
+# CBOR encoder/decoder designed for microcontrollers.
+
+[package]
+name = "dragonwing-zcbor"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0 OR MIT"
+description = "Rust wrapper for Zephyr's zcbor CBOR library"
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = []
+# Enable COSE_Sign1 support (requires dragonwing-crypto with mldsa65)
+cose = ["dragonwing-crypto"]
+
+[dependencies]
+# Optional: For COSE signatures with ML-DSA
+dragonwing-crypto = { path = "../dragonwing-crypto", optional = true }

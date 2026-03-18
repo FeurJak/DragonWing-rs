@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# SPI Test Application for Arduino Uno Q
+
+[package]
+name = "rustapp"
+version = "0.1.0"
+edition = "2021"
+description = "SPI peripheral test on Arduino Uno Q"
+license = "Apache-2.0 OR MIT"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+zephyr = "0.1.0"
+log = "0.4.22"
+
+[build-dependencies]
+zephyr-build = "0.1.0"

@@ -1,0 +1,15 @@
+/*
+ * Device Tree Overlay for Arduino Uno Q SPI Test
+ * 
+ * This overlay adds the SPI peripheral (slave) device to SPI3,
+ * enabling communication with the Linux MPU.
+ */
+
+/* Add SPI slave device to SPI3 */
+&spi3 {
+	device0: device@0 {
+		compatible = "zephyr,spi-slave";
+		reg = <0>;
+		zephyr,deferred-init;
+	};
+};
