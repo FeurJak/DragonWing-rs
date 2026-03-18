@@ -7,22 +7,33 @@ DragonWing-rs provides Rust libraries and demos for the **Arduino Uno Q** platfo
 - **STM32U585 MCU** - ARM Cortex-M33 running Zephyr RTOS (no_std Rust)
 - **QRB2210 MPU** - Qualcomm processor running Linux (std Rust)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Arduino Uno Q                            │
-│                                                              │
-│  ┌──────────────────┐         ┌──────────────────────────┐  │
-│  │   STM32U585 MCU  │   SPI   │      QRB2210 MPU         │  │
-│  │   (Cortex-M33)   │◄───────►│      (Linux aarch64)     │  │
-│  │                  │         │                          │  │
-│  │  - Zephyr RTOS   │         │  - Linux kernel          │  │
-│  │  - no_std Rust   │         │  - std Rust              │  │
-│  │  - Real-time     │         │  - Network stack         │  │
-│  │  - Crypto HW     │         │  - File system           │  │
-│  │  - LED Matrix    │         │  - SSH access            │  │
-│  └──────────────────┘         └──────────────────────────┘  │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+block-beta
+    columns 3
+    
+    block:board:3
+        columns 2
+        
+        block:mcu:1
+            columns 1
+            A["STM32U585 MCU<br/>(Cortex-M33)"]
+            B["Zephyr RTOS"]
+            C["no_std Rust"]
+            D["Crypto HW"]
+            E["LED Matrix"]
+        end
+        
+        block:mpu:1
+            columns 1
+            F["QRB2210 MPU<br/>(Linux aarch64)"]
+            G["Linux Kernel"]
+            H["std Rust"]
+            I["Network Stack"]
+            J["SSH Access"]
+        end
+    end
+    
+    mcu <-- "SPI" --> mpu
 ```
 
 ## Communication
@@ -31,54 +42,73 @@ DragonWing-rs provides Rust libraries and demos for the **Arduino Uno Q** platfo
 
 The MCU and MPU communicate via SPI with a custom framing protocol:
 
+```mermaid
+packet-beta
+  0-15: "Magic (0xAA55)"
+  16-31: "Length"
+  32-95: "Payload (MessagePack-RPC)"
 ```
-┌─────────┬─────────┬──────────────────────────────────┐
-│  Magic  │ Length  │            Payload               │
-│ (2 bytes)│(2 bytes)│         (up to 508 bytes)        │
-├─────────┼─────────┼──────────────────────────────────┤
-│  0xAA55 │  0x00XX │  MessagePack-RPC encoded data    │
-└─────────┴─────────┴──────────────────────────────────┘
 
-Total frame size: 512 bytes (fixed)
-```
+**Frame Details:**
+- **Magic**: 2 bytes (`0xAA55`) - Frame sync marker
+- **Length**: 2 bytes - Payload length
+- **Payload**: Up to 508 bytes - MessagePack-RPC encoded data
+- **Total frame size**: 512 bytes (fixed)
 
 ### RPC Protocol
 
 MessagePack-RPC is used for structured communication:
 
-```
-Request:  [0, msg_id, "method_name", [params...]]
-Response: [1, msg_id, error, result]
-Notify:   [2, "method_name", [params...]]
-```
+| Type | Format | Example |
+|------|--------|---------|
+| Request | `[0, msg_id, "method", [params...]]` | `[0, 1, "ping", []]` |
+| Response | `[1, msg_id, error, result]` | `[1, 1, null, "pong"]` |
+| Notify | `[2, "method", [params...]]` | `[2, "log", ["hello"]]` |
 
 ## Crate Architecture
 
-```
-dragonwing-rs/
-├── crates/
-│   ├── dragonwing-crypto     # Cryptography (PQ + classical)
-│   ├── dragonwing-led-matrix # LED matrix driver
-│   ├── dragonwing-rpc        # Cross-platform RPC
-│   ├── dragonwing-spi        # Cross-platform SPI
-│   ├── dragonwing-spi-router # MPU SPI daemon
-│   └── dragonwing-zcbor      # CBOR/COSE encoding
-└── demos/
-    ├── mcu/                  # MCU firmware demos
-    └── mpu/                  # MPU application demos
+```mermaid
+graph TB
+    subgraph Crates["crates/"]
+        crypto["dragonwing-crypto<br/>PQ + Classical Crypto"]
+        led["dragonwing-led-matrix<br/>LED Matrix Driver"]
+        rpc["dragonwing-rpc<br/>Cross-platform RPC"]
+        spi["dragonwing-spi<br/>Cross-platform SPI"]
+        router["dragonwing-spi-router<br/>MPU SPI Daemon"]
+        zcbor["dragonwing-zcbor<br/>CBOR/COSE Encoding"]
+    end
+    
+    subgraph Demos["demos/"]
+        mcu["mcu/<br/>MCU Firmware"]
+        mpu["mpu/<br/>MPU Applications"]
+    end
+    
+    mcu --> crypto
+    mcu --> led
+    mcu --> rpc
+    mcu --> spi
+    mcu --> zcbor
+    
+    mpu --> rpc
+    mpu --> router
 ```
 
 ### Cross-Platform Crates
 
 Some crates support both MCU and MPU with feature flags:
 
-**dragonwing-rpc**
-- `mcu` feature: SPI transport, no_std, Zephyr integration
-- `mpu` feature: Unix socket client, tokio async, std
-
-**dragonwing-spi**
-- `mcu` feature: SPI peripheral (slave) mode via Zephyr
-- `mpu` feature: SPI controller (master) mode via spidev
+```mermaid
+graph LR
+    subgraph dragonwing-rpc
+        rpc_mcu["mcu feature<br/>SPI transport<br/>no_std<br/>Zephyr"]
+        rpc_mpu["mpu feature<br/>Unix socket<br/>tokio async<br/>std"]
+    end
+    
+    subgraph dragonwing-spi
+        spi_mcu["mcu feature<br/>SPI peripheral<br/>(slave mode)"]
+        spi_mpu["mpu feature<br/>SPI controller<br/>(master mode)"]
+    end
+```
 
 ## Build System
 
@@ -92,12 +122,14 @@ make build-mcu DEMO=pqc-demo  # Build MCU firmware
 make flash                 # Flash to board via OpenOCD
 ```
 
-Build flow:
-1. Docker container with Zephyr SDK
-2. West (Zephyr meta-tool) configures build
-3. CMake builds C and Rust components
-4. Cargo builds Rust as static library
-5. Final ELF linked by Zephyr toolchain
+```mermaid
+flowchart LR
+    A[Docker Container] --> B[West Config]
+    B --> C[CMake Build]
+    C --> D[Cargo Build]
+    D --> E[Zephyr Link]
+    E --> F[ELF Binary]
+```
 
 ### MPU Builds (cargo-zigbuild)
 
@@ -108,42 +140,35 @@ make build-mpu APP=pqc-client  # Cross-compile
 make deploy APP=pqc-client     # Deploy via SSH
 ```
 
-Build flow:
-1. cargo-zigbuild with aarch64-unknown-linux-gnu target
-2. Zig provides cross-compilation toolchain
-3. Binary copied to board via SCP
+```mermaid
+flowchart LR
+    A[cargo-zigbuild] --> B[Zig Toolchain]
+    B --> C[aarch64 Binary]
+    C --> D[SCP to Board]
+```
 
 ## Data Flow Example
 
 Typical crypto demo flow:
 
-```
-┌─────────────┐                              ┌─────────────┐
-│  pqc-client │                              │  pqc-demo   │
-│    (MPU)    │                              │    (MCU)    │
-└──────┬──────┘                              └──────┬──────┘
-       │                                            │
-       │  1. Connect to Unix socket                 │
-       ▼                                            │
-┌──────────────┐                                    │
-│  spi-router  │                                    │
-│    (MPU)     │                                    │
-└──────┬───────┘                                    │
-       │                                            │
-       │  2. RPC Request via SPI                    │
-       │     [0, 1, "xwing.run_demo", []]           │
-       ├───────────────────────────────────────────►│
-       │                                            │
-       │                              3. MCU runs   │
-       │                                 X-Wing KEM │
-       │                                            │
-       │  4. RPC Response via SPI                   │
-       │     [1, 1, null, "success"]                │
-       │◄───────────────────────────────────────────┤
-       │                                            │
-       ▼                                            ▼
-   Display                                    LED Matrix
-   Result                                     Animation
+```mermaid
+sequenceDiagram
+    participant Client as pqc-client<br/>(MPU)
+    participant Router as spi-router<br/>(MPU)
+    participant MCU as pqc-demo<br/>(MCU)
+    participant LED as LED Matrix
+    
+    Client->>Router: 1. Connect (Unix socket)
+    Client->>Router: 2. RPC Request<br/>[0, 1, "xwing.run_demo", []]
+    Router->>MCU: 3. SPI Transfer
+    
+    MCU->>MCU: 4. Run X-Wing KEM
+    MCU->>LED: 5. Show animation
+    
+    MCU->>Router: 6. SPI Response
+    Router->>Client: 7. RPC Response<br/>[1, 1, null, "success"]
+    
+    Client->>Client: 8. Display result
 ```
 
 ## Security Architecture
@@ -168,16 +193,15 @@ The MCU uses Zephyr's PSA Crypto implementation:
 - **Key Management**: Hardware-backed key storage
 - **Device-unique keys**: Derived from hardware ID
 
-```
-┌─────────────────────────────────────────┐
-│           Application Layer             │
-├─────────────────────────────────────────┤
-│         dragonwing-crypto/psa           │
-├─────────────────────────────────────────┤
-│         Zephyr PSA Crypto API           │
-├─────────────────────────────────────────┤
-│    TF-M / Secure Storage Backend        │
-├─────────────────────────────────────────┤
-│         Flash with AEAD Transform       │
-└─────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Storage Stack
+        A[Application Layer]
+        B[dragonwing-crypto/psa]
+        C[Zephyr PSA Crypto API]
+        D[TF-M / Secure Storage]
+        E[Flash + AEAD Transform]
+    end
+    
+    A --> B --> C --> D --> E
 ```

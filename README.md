@@ -23,10 +23,12 @@
                                       ▒▒▒▒▒▒
 
 
-Rust libraries for the Arduino Uno Q platform featuring
-post-quantum cryptography, 
-anonymous credentials,
-and secure storage.
+Rust libraries for the Arduino Uno Q platform
+featuring:
+
+* Post-Quantum Cryptography
+* Anonymous credentials
+* Secure storage
 ```
 
 ## Features
@@ -39,6 +41,23 @@ and secure storage.
 
 ## Quick Start
 
+### If Firmware is Already Flashed
+
+If your board already has MCU firmware flashed (e.g., from previous development):
+
+```bash
+# Set up board credentials
+cp .env.example .env
+# Edit .env with your board's IP and password
+
+# Run a demo directly (no build required)
+source .env && make run DEMO=pqc/psa
+```
+
+### Full Build from Scratch
+
+If you need to build and flash everything:
+
 ```bash
 # Clone the repository
 git clone https://github.com/AnomalyCo/DragonWing-rs.git
@@ -48,7 +67,7 @@ cd DragonWing-rs
 cp .env.example .env
 # Edit .env with your board's IP and password
 
-# Build Docker image (for MCU builds)
+# Build Docker image (for MCU builds) - first time only
 make docker-build
 
 # Build and flash MCU firmware
@@ -60,10 +79,19 @@ make build-mpu APP=pqc-client
 source .env && make deploy APP=pqc-client
 
 # Run a demo
-source .env && make ssh
-./spi-router &
-./pqc-client --xwing-demo
+source .env && make run DEMO=pqc/psa
 ```
+
+### Make Commands
+
+| Command                   | Description                                  |
+| ------------------------- | -------------------------------------------- |
+| `make run DEMO=pqc/psa`   | Run demo on **already flashed** firmware     |
+| `make demo DEMO=pqc/psa`  | Full workflow: build, flash, deploy, and run |
+| `make build-mcu DEMO=...` | Build MCU firmware only (requires Docker)    |
+| `make flash`              | Flash firmware to board                      |
+| `make build-mpu APP=...`  | Build MPU application                        |
+| `make deploy APP=...`     | Deploy MPU app to board                      |
 
 ## Project Structure
 

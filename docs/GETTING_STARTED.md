@@ -42,7 +42,23 @@ cp .env.example .env
 
 ## Quick Start
 
-### 1. Build and Run an MPU Demo
+### If Firmware is Already Flashed
+
+If your board already has MCU firmware and the MPU apps deployed (e.g., from previous development), you can run demos directly:
+
+```bash
+# Source environment variables
+source .env
+
+# Run a demo (no build required)
+make run DEMO=pqc/psa
+```
+
+This uses `make run` which only requires SSH access to the board - no Docker or build tools needed.
+
+### Full Build from Scratch
+
+#### 1. Build and Deploy MPU Apps
 
 ```bash
 # Source environment variables
@@ -54,33 +70,46 @@ make build-mpu APP=pqc-client
 # Deploy to board
 make deploy APP=pqc-client
 
-# SSH to board and run
-make ssh
-./pqc-client --help
+# Build and deploy the SPI router
+make build-mpu APP=spi-router
+make deploy APP=spi-router
 ```
 
-### 2. Build and Flash MCU Firmware
+#### 2. Build and Flash MCU Firmware
 
 ```bash
 # Build MCU firmware (requires Docker)
 make build-mcu DEMO=pqc-demo
 
 # Flash to board via OpenOCD
-make flash
+source .env && make flash
 ```
 
-### 3. Run a Complete Demo
-
-With MCU firmware flashed and SPI router running:
+#### 3. Run a Demo
 
 ```bash
-# On the board (via SSH):
-# Start the SPI router daemon
-./spi-router &
+# Run demo via make (recommended)
+source .env && make run DEMO=pqc/psa
 
-# Run the PQC client
+# Or SSH to board and run manually:
+make ssh
+./spi-router &
 ./pqc-client --psa-demo
 ```
+
+### Make Commands Reference
+
+| Command | Description | Requirements |
+|---------|-------------|--------------|
+| `make run DEMO=pqc/psa` | Run demo on **already flashed** firmware | SSH only |
+| `make demo DEMO=pqc/psa` | Full workflow: build, flash, deploy, run | Docker + SSH |
+| `make build-mcu DEMO=...` | Build MCU firmware | Docker |
+| `make flash` | Flash firmware to board | SSH + ADB |
+| `make build-mpu APP=...` | Build MPU application | cargo-zigbuild |
+| `make deploy APP=...` | Deploy MPU app to board | SSH |
+| `make ssh` | Open SSH session to board | SSH |
+
+> **Note:** `make run` is for running demos on already-flashed firmware. Use `make demo` only if you need to rebuild and reflash everything.
 
 ## Available Demos
 
