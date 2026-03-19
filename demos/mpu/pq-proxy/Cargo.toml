@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# PQ-Ratchet Proxy for MPU (QRB2210 Linux)
+#
+# This service runs on the MPU and acts as a WebSocket-to-SPI bridge:
+# - Accepts WebSocket connections from the Secure-Relayer (macOS)
+# - Forwards PQ-Ratchet frames to the MCU over SPI
+# - Returns MCU responses back over WebSocket
+#
+# Architecture:
+#   Secure-Relayer (macOS) --WebSocket--> pq-proxy (MPU) --SPI--> MCU (TrustZone)
+#
+# Building:
+#   - For Linux/MPU: cargo build --release
+#   - For testing (mock SPI): cargo build --release --no-default-features
+
+[package]
+name = "pq-proxy"
+version = "0.1.0"
+edition = "2021"
+description = "PQ-Ratchet WebSocket-to-SPI proxy for Arduino Uno Q MPU"
+license = "Apache-2.0 OR MIT"
+authors = ["DragonWing Team"]
+
+[[bin]]
+name = "pq-proxy"
+path = "src/main.rs"
+
+[features]
+default = []
+# Enable real SPI (Linux only)
+spi = ["dragonwing-spi"]
+
+[dependencies]
+# SPI communication (optional, Linux only)
+dragonwing-spi = { path = "../../../crates/dragonwing-spi", features = ["mpu"], optional = true }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# WebSocket server
+tokio-tungstenite = "0.21"
+futures-util = "0.3"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Error handling
+anyhow = "1.0"
+
+# Exclude from parent workspace (requires Linux spidev)
+[workspace]

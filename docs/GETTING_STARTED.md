@@ -117,6 +117,7 @@ make ssh
 
 | Demo | Description | Command |
 |------|-------------|---------|
+| **secure-access** | PQ-Ratchet receiver (TrustZone) | `make build-mcu DEMO=secure-access` |
 | pqc-demo | Full PQC showcase | `make build-mcu DEMO=pqc-demo` |
 | led-matrix-demo | LED animations | `make build-mcu DEMO=led-matrix-demo` |
 | mlkem-demo | ML-KEM key exchange | `make build-mcu DEMO=mlkem-demo` |
@@ -126,10 +127,17 @@ make ssh
 
 | App | Description | Command |
 |-----|-------------|---------|
+| **pq-proxy** | WebSocket→SPI encrypted proxy | `cargo build -p pq-proxy --target aarch64-unknown-linux-gnu` |
 | pqc-client | PQC demo controller | `make build-mpu APP=pqc-client` |
 | mlkem-client | ML-KEM client | `make build-mpu APP=mlkem-client` |
 | weather-display | Weather on LED matrix | `make build-mpu APP=weather-display` |
 | spi-router | SPI router daemon | `make build-mpu APP=spi-router` |
+
+### Host Apps (macOS/Linux x86_64)
+
+| App | Description | Command |
+|-----|-------------|---------|
+| **pq-relayer-demo** | Test client for PQ-Ratchet | `cargo run -p pq-relayer-demo` |
 
 ### Demo Commands (via pqc-client)
 
@@ -165,19 +173,24 @@ After flashing `pqc-demo` firmware:
 
 ```
 DragonWing-rs/
-├── crates/                    # Reusable libraries
-│   ├── dragonwing-crypto/     # Cryptography
-│   ├── dragonwing-led-matrix/ # LED matrix driver
-│   ├── dragonwing-rpc/        # RPC protocol
-│   ├── dragonwing-spi/        # SPI communication
-│   ├── dragonwing-spi-router/ # SPI daemon
-│   └── dragonwing-zcbor/      # CBOR encoding
+├── crates/                        # Reusable libraries
+│   ├── dragonwing-crypto/         # PQ + Classical Crypto + PQ-Ratchet
+│   ├── dragonwing-secure-relayer/ # Host-to-MCU secure bridge
+│   ├── dragonwing-led-matrix/     # LED matrix driver
+│   ├── dragonwing-rpc/            # RPC protocol
+│   ├── dragonwing-spi/            # SPI communication
+│   ├── dragonwing-spi-router/     # SPI daemon
+│   └── dragonwing-zcbor/          # CBOR encoding
 ├── demos/
-│   ├── mcu/                   # MCU firmware
-│   └── mpu/                   # Linux apps
-├── docker/                    # Zephyr build environment
-├── config/                    # Board configurations
-└── docs/                      # Documentation
+│   ├── mcu/                       # MCU firmware (Zephyr + Rust)
+│   │   └── secure-access/         # PQ-Ratchet receiver
+│   ├── mpu/                       # MPU apps (Linux aarch64)
+│   │   └── pq-proxy/              # WebSocket→SPI proxy
+│   └── host/                      # Host apps (macOS/Linux x86_64)
+│       └── pq-relayer-demo/       # PQ-Ratchet test client
+├── docker/                        # Zephyr build environment
+├── config/                        # Board configurations
+└── docs/                          # Documentation
 ```
 
 ## Troubleshooting
@@ -227,8 +240,31 @@ make ssh
 # Then run OpenOCD commands manually
 ```
 
+## Secure Data Streaming Quick Start
+
+For post-quantum secure data streaming from phones to the MCU:
+
+```bash
+# 1. Build and flash MCU firmware
+make build-mcu DEMO=secure-access
+make flash
+
+# 2. Deploy proxy to MPU
+cargo build --release -p pq-proxy --target aarch64-unknown-linux-gnu
+scp target/aarch64-unknown-linux-gnu/release/pq-proxy arduino@$BOARD_IP:~/
+
+# 3. Start proxy on MPU (via SSH)
+ssh arduino@$BOARD_IP "./pq-proxy --listen 0.0.0.0:8080"
+
+# 4. Test from host
+cargo run -p pq-relayer-demo -- --url ws://$BOARD_IP:8080 --handshake
+```
+
+See [SECURE_ACCESS.md](SECURE_ACCESS.md) for the full protocol specification.
+
 ## Next Steps
 
 - Read [ARCHITECTURE.md](ARCHITECTURE.md) for system design
 - Read [CRYPTOGRAPHY.md](CRYPTOGRAPHY.md) for crypto details
+- Read [SECURE_ACCESS.md](SECURE_ACCESS.md) for secure streaming protocol
 - Explore the crate READMEs in `crates/*/README.md`

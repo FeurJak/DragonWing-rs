@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# PQ-Ratchet Relayer Demo (Host/macOS)
+#
+# CLI tool for testing the Secure-Relayer crate.
+# Connects to the MPU proxy and sends encrypted data to the MCU.
+#
+# Usage:
+#   pq-relayer-demo --mpu ws://192.168.1.100:8080 --send "Hello, MCU!"
+#   pq-relayer-demo --mpu ws://localhost:8080 --file image.bin
+
+[package]
+name = "pq-relayer-demo"
+version = "0.1.0"
+edition = "2021"
+description = "Demo CLI for PQ-Ratchet Secure Relayer"
+license = "Apache-2.0 OR MIT"
+authors = ["DragonWing Team"]
+
+[[bin]]
+name = "pq-relayer-demo"
+path = "src/main.rs"
+
+[dependencies]
+# Secure Relayer
+dragonwing-secure-relayer = { path = "../../../crates/dragonwing-secure-relayer" }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Error handling
+anyhow = "1.0"
+
+# Hex encoding for display
+hex = "0.4"

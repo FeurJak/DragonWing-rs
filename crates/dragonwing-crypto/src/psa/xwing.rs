@@ -65,7 +65,7 @@ use super::types::{StorageFlags, StorageUid};
 
 // Import X-Wing types - only available when xwing feature is enabled
 #[cfg(feature = "xwing")]
-use crate::post_quantum::xwing:::{
+use crate::post_quantum::xwing::{
     Ciphertext, PublicKey, SecretKey, SharedSecret, CIPHERTEXT_SIZE, PUBLIC_KEY_SIZE,
     SECRET_KEY_SIZE, SHARED_SECRET_SIZE,
 };

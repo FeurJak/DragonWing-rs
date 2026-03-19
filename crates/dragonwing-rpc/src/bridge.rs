@@ -699,7 +699,8 @@ impl Transport for UartTransport {
 /// Frame protocol constants
 pub const FRAME_MAGIC: u16 = 0xAA55;
 pub const FRAME_HEADER_SIZE: usize = 4;
-pub const SPI_BUFFER_SIZE: usize = 512;
+/// SPI buffer size - 2KB to support X-Wing key exchange (pub key: 1216 bytes, ciphertext: 1120 bytes)
+pub const SPI_BUFFER_SIZE: usize = 2048;
 pub const MAX_PAYLOAD_SIZE: usize = SPI_BUFFER_SIZE - FRAME_HEADER_SIZE;
 
 /// FFI functions for Zephyr SPI peripheral access

@@ -70,7 +70,8 @@ MessagePack-RPC is used for structured communication:
 ```mermaid
 graph TB
     subgraph Crates["crates/"]
-        crypto["dragonwing-crypto<br/>PQ + Classical Crypto"]
+        crypto["dragonwing-crypto<br/>PQ + Classical Crypto<br/>+ PQ-Ratchet"]
+        relayer["dragonwing-secure-relayer<br/>Host-to-MCU Bridge"]
         led["dragonwing-led-matrix<br/>LED Matrix Driver"]
         rpc["dragonwing-rpc<br/>Cross-platform RPC"]
         spi["dragonwing-spi<br/>Cross-platform SPI"]
@@ -81,6 +82,7 @@ graph TB
     subgraph Demos["demos/"]
         mcu["mcu/<br/>MCU Firmware"]
         mpu["mpu/<br/>MPU Applications"]
+        host["host/<br/>Host Applications"]
     end
     
     mcu --> crypto
@@ -91,6 +93,10 @@ graph TB
     
     mpu --> rpc
     mpu --> router
+    mpu --> spi
+    
+    host --> relayer
+    relayer --> crypto
 ```
 
 ### Cross-Platform Crates
@@ -171,6 +177,34 @@ sequenceDiagram
     Client->>Client: 8. Display result
 ```
 
+## Secure Data Streaming Architecture
+
+For secure data streaming (e.g., camera frames from phones), the system uses a **MCU-rooted trust model**:
+
+```mermaid
+flowchart LR
+    subgraph Trusted["Trusted Zone"]
+        SE["Secure-Relayer<br/>(macOS Secure Enclave)"]
+        MCU["MCU TrustZone<br/>(STM32U585)"]
+    end
+    
+    subgraph Untrusted["Untrusted Zone"]
+        Phone["Phone<br/>(IoT App)"]
+        MPU["MPU Linux<br/>(pq-proxy)"]
+    end
+    
+    Phone -->|"BPP Encrypted"| SE
+    SE -->|"PQ-Ratchet"| MPU
+    MPU -->|"SPI (encrypted)"| MCU
+    
+    style MPU fill:#ffcccc
+    style Phone fill:#ffcccc
+```
+
+**Key principle**: The MPU never sees plaintext - it only forwards encrypted chunks. Only the MCU (TrustZone) can decrypt.
+
+See [SECURE_ACCESS.md](SECURE_ACCESS.md) for the full protocol specification.
+
 ## Security Architecture
 
 ### Cryptographic Primitives
@@ -182,8 +216,10 @@ sequenceDiagram
 | X-Wing | Hybrid PQ KEM | ML-KEM + X25519 |
 | Ed25519 | Classical Signature | Fast signing |
 | X25519 | Classical ECDH | Key agreement |
-| XChaCha20-Poly1305 | AEAD | Authenticated encryption |
+| XChaCha20-Poly1305 | AEAD | Authenticated encryption (24-byte nonce) |
+| ChaCha20-Poly1305 | AEAD | BPP protocol compatibility |
 | SAGA | Anonymous Credentials | Unlinkable presentations |
+| PQ-Ratchet | Double Ratchet | Forward-secret streaming |
 
 ### PSA Secure Storage
 

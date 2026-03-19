@@ -15,7 +15,8 @@
 #define SPI_PERIPHERAL_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_spi_slave)
 
 // Buffer size for SPI transfers (must match Linux side)
-#define SPI_BUFFER_SIZE 512
+// Increased to 2KB to support X-Wing key exchange (pub key: 1216 bytes, ciphertext: 1120 bytes)
+#define SPI_BUFFER_SIZE 2048
 
 // Frame header
 #define FRAME_MAGIC 0xAA55

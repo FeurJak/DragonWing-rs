@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install -y \
 # -----------------------------------------------------------------------------
 FROM base AS zephyr-sdk
 
-ARG ZEPHYR_SDK_VERSION=0.17.1
+ARG ZEPHYR_SDK_VERSION=1.0.0
 ARG ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
 
 # Download and install Zephyr SDK (minimal - just ARM toolchain)
@@ -68,7 +68,7 @@ RUN mkdir -p ${ZEPHYR_SDK_INSTALL_DIR} && \
     ./setup.sh -t arm-zephyr-eabi -h -c && \
     rm /tmp/zephyr-sdk-${ZEPHYR_SDK_VERSION}_${SDK_ARCH}_minimal.tar.xz
 
-ENV ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk-0.17.1
+ENV ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk-1.0.0
 
 # -----------------------------------------------------------------------------
 # Stage 3: Install Rust

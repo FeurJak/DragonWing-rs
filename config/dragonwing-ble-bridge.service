@@ -1,0 +1,30 @@
+[Unit]
+Description=DragonWing BLE Bridge - Secure Access for Arduino Uno Q
+Documentation=https://github.com/AnomalyCo/DragonWing-rs
+After=bluetooth.target network.target
+Wants=bluetooth.target
+Requires=bluetooth.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/home/arduino/ble-bridge --name DragonWing-UnoQ --spi /dev/spidev0.0 --ws-port 8080
+Restart=on-failure
+RestartSec=5
+
+# Environment
+Environment=RUST_LOG=info
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dragonwing-ble-bridge
+
+# Security hardening (optional)
+# ProtectSystem=strict
+# ProtectHome=true
+# NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

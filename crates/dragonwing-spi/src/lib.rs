@@ -42,7 +42,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 /// SPI buffer size (must match on both sides)
-pub const SPI_BUFFER_SIZE: usize = 512;
+/// 2KB to match MCU SPI peripheral buffer size
+/// Note: For larger transfers like camera frames, use multiple transfers
+pub const SPI_BUFFER_SIZE: usize = 2048;
 
 /// Frame header size (magic + length)
 pub const FRAME_HEADER_SIZE: usize = 4;
@@ -110,7 +112,7 @@ pub mod peripheral;
 #[cfg(feature = "mcu")]
 pub use peripheral::SpiTransport;
 
-// MPU controller (master) implementation  
+// MPU controller (master) implementation
 #[cfg(feature = "mpu")]
 pub mod controller;
 

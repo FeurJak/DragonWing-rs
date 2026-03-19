@@ -50,7 +50,8 @@ RED := \033[0;31m
 NC := \033[0m
 
 .PHONY: all help build-mcu flash build-mpu deploy run demo demo-list \
-        docker-build docker-shell clean serial ssh ping version setup-spi-router
+        docker-build docker-shell clean serial ssh ping version setup-spi-router setup-ble-bridge \
+        sync-to-board remote-build-mpu remote-install remote-start remote-setup
 
 # ==============================================================================
 # Help
@@ -73,12 +74,15 @@ help:
 	@echo "  rpc-server      - RPC server with LED matrix"
 	@echo "  mlkem-demo      - ML-KEM 768 demo"
 	@echo "  spi-test        - SPI communication test"
+	@echo "  secure-access   - Secure Access responder (SAGA+X-Wing)"
 	@echo ""
 	@echo "$(GREEN)MPU Apps (QRB2210, Linux):$(NC)"
 	@echo "  pqc-client      - PQC demo client"
 	@echo "  mlkem-client    - ML-KEM client"
 	@echo "  weather-display - Weather on LED matrix"
 	@echo "  spi-router      - SPI router daemon"
+	@echo "  ble-bridge      - BLE bridge for Secure Access"
+	@echo "  remote-iot      - Phone camera streaming"
 	@echo ""
 	@echo "$(GREEN)Run Targets (after flashing):$(NC)"
 	@echo "  make run DEMO=pqc/psa         - PSA Secure Storage"
@@ -100,6 +104,22 @@ help:
 	@echo "$(GREEN)Setup Commands:$(NC)"
 	@echo "  make docker-build             - Build Docker image"
 	@echo "  make setup-spi-router         - Install SPI router service"
+	@echo "  make setup-ble-bridge         - Install BLE bridge service (cross-compiled)"
+	@echo ""
+	@echo "$(GREEN)Remote Build (native compilation on board):$(NC)"
+	@echo "  make sync-to-board            - Sync project to board"
+	@echo "  make remote-build-mpu APP=x   - Build app on board"
+	@echo "  make remote-build-mpu APP=x FEATURES=y - Build with features"
+	@echo "  make remote-install APP=x     - Install built binary"
+	@echo "  make remote-start APP=x       - Start/restart systemd service"
+	@echo "  make remote-setup APP=x       - Full workflow: sync+build+install+start"
+	@echo ""
+	@echo "$(YELLOW)Example (BLE bridge with BlueZ):$(NC)"
+	@echo "  make setup-ble-bridge-native  - One command setup"
+	@echo "  # Or step by step:"
+	@echo "  make remote-build-mpu APP=ble-bridge FEATURES=bluez"
+	@echo "  make remote-install APP=ble-bridge"
+	@echo "  make remote-start APP=ble-bridge"
 
 # ==============================================================================
 # Docker Commands
@@ -165,6 +185,12 @@ build-mcu: check-docker .docker-image-built
 			cp -r /lib-rpc/* /tmp/app/dragonwing-rpc/ 2>/dev/null || true && \
 			cp -r /lib-spi/* /tmp/app/dragonwing-spi/ 2>/dev/null || true && \
 			cp -r /lib-zcbor/* /tmp/app/dragonwing-zcbor/ 2>/dev/null || true && \
+			echo "Creating workspace Cargo.toml for standalone build..." && \
+			printf "[workspace]\nmembers = [\".\", \"dragonwing-crypto\", \"dragonwing-led-matrix\", \"dragonwing-rpc\", \"dragonwing-spi\", \"dragonwing-zcbor\"]\nresolver = \"2\"\n\n[workspace.package]\nversion = \"0.1.0\"\nedition = \"2021\"\nlicense = \"Apache-2.0 OR MIT\"\nrepository = \"https://github.com/FeurJak/DragonWing-rs\"\n\n[workspace.dependencies]\nlibcrux-iot-ml-kem = { git = \"https://github.com/FeurJak/libcrux-iot\", rev = \"e223df3b37aa76298716c02d77b4d8af96fd2111\", default-features = false }\nlibcrux-iot-ml-dsa = { git = \"https://github.com/FeurJak/libcrux-iot\", rev = \"e223df3b37aa76298716c02d77b4d8af96fd2111\", default-features = false }\nlibcrux-iot-sha3 = { git = \"https://github.com/FeurJak/libcrux-iot\", rev = \"e223df3b37aa76298716c02d77b4d8af96fd2111\" }\nlibcrux-secrets = \"0.0.5\"\ncurve25519-dalek = { version = \"4\", default-features = false, features = [\"alloc\", \"zeroize\"] }\nsha2 = { version = \"0.10\", default-features = false }\nrand_core = { version = \"0.6\", default-features = false }\nrmp-serde = \"1.3\"\nrmpv = { version = \"1.3\", features = [\"with-serde\"] }\nserde = { version = \"1.0\", default-features = false, features = [\"derive\"] }\nheapless = \"0.8\"\nlog = \"0.4\"\nthiserror = \"2.0\"\nanyhow = \"1.0\"\ntokio = { version = \"1\", features = [\"full\"] }\nclap = { version = \"4\", features = [\"derive\"] }\nenv_logger = \"0.11\"\ndragonwing-zcbor = { path = \"dragonwing-zcbor\" }\ndragonwing-spi = { path = \"dragonwing-spi\" }\ndragonwing-crypto = { path = \"dragonwing-crypto\" }\ndragonwing-led-matrix = { path = \"dragonwing-led-matrix\" }\ndragonwing-rpc = { path = \"dragonwing-rpc\" }\n\n" > /tmp/app/Cargo.toml.workspace && \
+			head -n 1 /tmp/app/Cargo.toml > /tmp/app/Cargo.toml.new && \
+			cat /tmp/app/Cargo.toml.workspace >> /tmp/app/Cargo.toml.new && \
+			tail -n +2 /tmp/app/Cargo.toml >> /tmp/app/Cargo.toml.new && \
+			mv /tmp/app/Cargo.toml.new /tmp/app/Cargo.toml && \
 			sed -i "s|path = \"../../crates/dragonwing-crypto\"|path = \"dragonwing-crypto\"|g" /tmp/app/Cargo.toml 2>/dev/null || true && \
 			sed -i "s|path = \"../../crates/dragonwing-led-matrix\"|path = \"dragonwing-led-matrix\"|g" /tmp/app/Cargo.toml 2>/dev/null || true && \
 			sed -i "s|path = \"../../crates/dragonwing-rpc\"|path = \"dragonwing-rpc\"|g" /tmp/app/Cargo.toml 2>/dev/null || true && \
@@ -301,10 +327,22 @@ demo-list:
 # Utility Commands
 # ==============================================================================
 
-# Open serial console to MCU
+# Open serial console to MCU (interactive - run from terminal)
+# Note: Serial port is managed by arduino-router, use 'monitor' target instead
 serial: check-ssh
-	@echo "$(CYAN)Opening serial console to MCU (Ctrl+A then X to exit)...$(NC)"
-	sshpass -p '$(BOARD_PASS)' ssh -t $(BOARD_USER)@$(BOARD_IP) "picocom -b 115200 /dev/ttyACM0"
+	@echo "$(CYAN)Opening serial console to MCU (Ctrl+A then Z for menu)...$(NC)"
+	@echo "$(YELLOW)Note: If port is busy, stop arduino-router first: sudo systemctl stop arduino-router$(NC)"
+	sshpass -p '$(BOARD_PASS)' ssh -t $(BOARD_USER)@$(BOARD_IP) "minicom -D /dev/ttyHS1 -b 115200"
+
+# Monitor MCU via arduino-cli (uses arduino-router)
+monitor: check-ssh
+	@echo "$(CYAN)Opening MCU monitor via arduino-cli (Ctrl+C to stop)...$(NC)"
+	sshpass -p '$(BOARD_PASS)' ssh -t $(BOARD_USER)@$(BOARD_IP) "arduino-cli monitor -p /dev/ttyHS1 --config 115200"
+
+# Read MCU logs from journalctl
+logs: check-ssh
+	@echo "$(CYAN)Streaming arduino-router logs (Ctrl+C to stop)...$(NC)"
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "journalctl -f -u arduino-router --no-pager"
 
 # SSH to board
 ssh: check-ssh
@@ -340,6 +378,128 @@ setup-swd: check-adb
 	@echo "$(CYAN)Setting up SWD configuration on board...$(NC)"
 	adb push config/QRB2210_swd.cfg /home/arduino/
 	@echo "$(GREEN)SWD configuration uploaded$(NC)"
+
+# Setup BLE bridge as systemd service
+# Note: Cross-compiled version doesn't have BlueZ support.
+# For full BLE functionality, use setup-ble-bridge-native which builds on the board.
+setup-ble-bridge: check-zigbuild check-ssh
+	@echo "$(CYAN)Setting up BLE bridge (cross-compiled, no BlueZ)...$(NC)"
+	@echo "$(YELLOW)Note: For full BLE support, use 'make setup-ble-bridge-native'$(NC)"
+	$(MAKE) build-mpu APP=ble-bridge
+	$(MAKE) deploy APP=ble-bridge
+	@echo "Installing systemd service..."
+	sshpass -p '$(BOARD_PASS)' scp config/dragonwing-ble-bridge.service $(BOARD_USER)@$(BOARD_IP):/tmp/
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+		echo '$(BOARD_PASS)' | sudo -S cp /tmp/dragonwing-ble-bridge.service /etc/systemd/system/ && \
+		echo '$(BOARD_PASS)' | sudo -S systemctl daemon-reload && \
+		echo '$(BOARD_PASS)' | sudo -S systemctl enable dragonwing-ble-bridge"
+	@echo "$(GREEN)BLE bridge installed (without BlueZ support)$(NC)"
+
+# Remote build directory on board
+REMOTE_BUILD_DIR := /home/$(BOARD_USER)/dragonwing-rs
+
+# Sync project to board (excludes target directories and git)
+sync-to-board: check-ssh
+	@echo "$(CYAN)Syncing project to board...$(NC)"
+	@command -v rsync >/dev/null 2>&1 || { echo "$(RED)Error: rsync is not installed$(NC)"; exit 1; }
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "mkdir -p $(REMOTE_BUILD_DIR)"
+	sshpass -p '$(BOARD_PASS)' rsync -avz --delete \
+		--exclude 'target' \
+		--exclude '.git' \
+		--exclude 'output' \
+		--exclude '.docker-image-built' \
+		--exclude '*.elf' \
+		--exclude '*.bin' \
+		--exclude '*.hex' \
+		. $(BOARD_USER)@$(BOARD_IP):$(REMOTE_BUILD_DIR)/
+	@echo "$(GREEN)Project synced to $(REMOTE_BUILD_DIR)$(NC)"
+
+# Build MPU application remotely on the board (native compilation)
+# Usage: make remote-build-mpu APP=ble-bridge FEATURES=bluez
+# This is required for apps with native dependencies (like BlueZ/D-Bus)
+FEATURES ?=
+remote-build-mpu: check-ssh sync-to-board
+	@echo "$(CYAN)Building $(APP) remotely on board...$(NC)"
+ifeq ($(APP),spi-router)
+	@echo "Building crates/dragonwing-spi-router..."
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+		source ~/.cargo/env && \
+		cd $(REMOTE_BUILD_DIR)/crates/dragonwing-spi-router && \
+		cargo build --release $(if $(FEATURES),--features $(FEATURES),)"
+	@echo "$(GREEN)Build complete: $(REMOTE_BUILD_DIR)/crates/dragonwing-spi-router/target/release/dragonwing-spi-router$(NC)"
+else
+	@echo "Building demos/mpu/$(APP)..."
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+		source ~/.cargo/env && \
+		cd $(REMOTE_BUILD_DIR)/demos/mpu/$(APP) && \
+		cargo build --release $(if $(FEATURES),--features $(FEATURES),)"
+	@echo "$(GREEN)Build complete: $(REMOTE_BUILD_DIR)/demos/mpu/$(APP)/target/release/$(APP)$(NC)"
+endif
+
+# Install remotely-built app as systemd service
+# Usage: make remote-install APP=ble-bridge
+# Note: Workspace builds go to the root target/ directory
+remote-install: check-ssh
+	@echo "$(CYAN)Installing $(APP)...$(NC)"
+ifeq ($(APP),spi-router)
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+		cp $(REMOTE_BUILD_DIR)/target/release/dragonwing-spi-router /home/$(BOARD_USER)/spi-router"
+	@test -f config/dragonwing-spi-router.service && \
+		sshpass -p '$(BOARD_PASS)' scp config/dragonwing-spi-router.service $(BOARD_USER)@$(BOARD_IP):/tmp/ && \
+		sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+			echo '$(BOARD_PASS)' | sudo -S cp /tmp/dragonwing-spi-router.service /etc/systemd/system/ && \
+			echo '$(BOARD_PASS)' | sudo -S systemctl daemon-reload && \
+			echo '$(BOARD_PASS)' | sudo -S systemctl enable dragonwing-spi-router" || true
+	@echo "$(GREEN)$(APP) installed to /home/$(BOARD_USER)/spi-router$(NC)"
+else ifeq ($(APP),ble-bridge)
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+		cp $(REMOTE_BUILD_DIR)/target/release/ble-bridge /home/$(BOARD_USER)/ble-bridge"
+	@test -f config/dragonwing-ble-bridge.service && \
+		sshpass -p '$(BOARD_PASS)' scp config/dragonwing-ble-bridge.service $(BOARD_USER)@$(BOARD_IP):/tmp/ && \
+		sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+			echo '$(BOARD_PASS)' | sudo -S cp /tmp/dragonwing-ble-bridge.service /etc/systemd/system/ && \
+			echo '$(BOARD_PASS)' | sudo -S systemctl daemon-reload && \
+			echo '$(BOARD_PASS)' | sudo -S systemctl enable dragonwing-ble-bridge" || true
+	@echo "$(GREEN)$(APP) installed to /home/$(BOARD_USER)/ble-bridge$(NC)"
+else
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+		cp $(REMOTE_BUILD_DIR)/target/release/$(APP) /home/$(BOARD_USER)/$(APP)"
+	@echo "$(GREEN)$(APP) installed to /home/$(BOARD_USER)/$(APP)$(NC)"
+endif
+
+# Start/restart a systemd service
+# Usage: make remote-start APP=ble-bridge
+remote-start: check-ssh
+	@echo "$(CYAN)Starting $(APP)...$(NC)"
+ifeq ($(APP),spi-router)
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+		echo '$(BOARD_PASS)' | sudo -S systemctl restart dragonwing-spi-router && \
+		sleep 2 && \
+		systemctl status dragonwing-spi-router --no-pager"
+else ifeq ($(APP),ble-bridge)
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+		echo '$(BOARD_PASS)' | sudo -S systemctl restart dragonwing-ble-bridge && \
+		sleep 2 && \
+		systemctl status dragonwing-ble-bridge --no-pager"
+else
+	@echo "$(YELLOW)No systemd service configured for $(APP). Run manually on board.$(NC)"
+endif
+
+# Full remote setup: sync, build with features, install, start
+# Usage: make remote-setup APP=ble-bridge FEATURES=bluez
+remote-setup: remote-build-mpu remote-install remote-start
+	@echo "$(GREEN)$(APP) setup complete!$(NC)"
+
+# Setup BLE bridge with native compilation on the board (full BlueZ support)
+# This requires Rust to be installed on the Arduino board
+setup-ble-bridge-native: check-ssh
+	@echo "$(CYAN)Setting up BLE bridge with native BlueZ support...$(NC)"
+	@echo "Installing BlueZ development dependencies..."
+	sshpass -p '$(BOARD_PASS)' ssh $(BOARD_USER)@$(BOARD_IP) "\
+		echo '$(BOARD_PASS)' | sudo -S apt-get update && \
+		echo '$(BOARD_PASS)' | sudo -S apt-get install -y libdbus-1-dev pkg-config"
+	$(MAKE) remote-setup APP=ble-bridge FEATURES=bluez
+	@echo "$(GREEN)BLE bridge service installed with BlueZ support$(NC)"
 
 # ==============================================================================
 # Clean

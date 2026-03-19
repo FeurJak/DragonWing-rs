@@ -13,8 +13,10 @@ DragonWing-rs provides a comprehensive cryptography library (`dragonwing-crypto`
 | X-Wing | IETF Draft | Hybrid PQ | 1216 bytes (pk) | ML-KEM + X25519 |
 | Ed25519 | RFC 8032 | 128-bit | 32 bytes (pk) | Fast signatures |
 | X25519 | RFC 7748 | 128-bit | 32 bytes (pk) | Key agreement |
-| XChaCha20-Poly1305 | RFC 8439+ | 256-bit | 32 bytes | AEAD encryption |
+| XChaCha20-Poly1305 | RFC 8439+ | 256-bit | 32 bytes | AEAD encryption (24-byte nonce) |
+| ChaCha20-Poly1305 | RFC 8439 | 256-bit | 32 bytes | BPP protocol AEAD |
 | SAGA | Research | 128-bit | Variable | Anonymous credentials |
+| PQ-Ratchet | Signal-based | Hybrid PQ | 32 bytes (root) | Forward-secret streaming |
 
 ## Post-Quantum Cryptography
 
@@ -213,6 +215,85 @@ let device_session_key = device_state.complete(&response)?;
 // Both now have matching session keys
 assert_eq!(device_session_key, server_state.session_key());
 ```
+
+## PQ-Ratchet Protocol (Experimental)
+
+The PQ-Ratchet protocol provides **post-quantum forward-secret** encrypted streaming, combining:
+
+- **X-Wing KEM**: For the ratchet step (ML-KEM-768 + X25519)
+- **Signal Double Ratchet**: Per-message key derivation
+- **XChaCha20-Poly1305**: Message encryption
+
+### Protocol Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    PQ-Ratchet State                             │
+├─────────────────────────────────────────────────────────────────┤
+│  KEM Ratchet (X-Wing):                                          │
+│    - root_key: [u8; 32]           // Root chain key             │
+│    - their_xwing_pk: PublicKey    // Peer's X-Wing PK           │
+│    - epoch: u64                   // KEM ratchet counter        │
+│                                                                 │
+│  Symmetric Ratchet:                                             │
+│    - send_chain_key: [u8; 32]     // Sending chain              │
+│    - recv_chain_key: [u8; 32]     // Receiving chain            │
+│    - send_msg_num: u32            // Messages sent this epoch   │
+│    - recv_msg_num: u32            // Messages received          │
+│                                                                 │
+│  Out-of-Order Handling:                                         │
+│    - skipped_keys: Map<(epoch, n), key>  // Max 50 entries      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Usage
+
+```rust
+use dragonwing_crypto::experimental::pq_ratchet::{
+    PqRatchet, Uninitialized, Established, RatchetMessage,
+};
+
+// Initiator side
+let (ratchet, init_msg) = PqRatchet::<Uninitialized>::initiate(&seed);
+// ... send init_msg to responder ...
+
+// After receiving response
+let ratchet: PqRatchet<Established> = ratchet.complete(&response)?;
+
+// Encrypt messages
+let (ciphertext, chunks) = ratchet.encrypt(b"Hello, secure world!")?;
+
+// Decrypt messages
+let plaintext = ratchet.decrypt(&received_message)?;
+```
+
+### Key Derivation (HKDF-SHA256)
+
+```rust
+// Domain separation labels
+const LABEL_ROOT_UPDATE: &[u8] = b"DragonWing PQ-Ratchet V1 Root Update";
+const LABEL_CHAIN_STEP: &[u8] = b"DragonWing PQ-Ratchet V1 Chain Step";
+const LABEL_MSG_KEY: &[u8] = b"DragonWing PQ-Ratchet V1 Message Key";
+```
+
+### Chunking for SPI Transport
+
+Large messages are chunked for reliable SPI transport:
+
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| Max chunk payload | 2000 bytes | SPI buffer = 2048, header = 16 |
+| Max chunks | 65535 | u16 index, ~128MB max message |
+| Chunk header | 16 bytes | Magic + version + flags + stream info |
+
+### Security Properties
+
+- **Forward secrecy**: Compromised keys cannot decrypt past messages
+- **Post-compromise security**: New keys derived after KEM ratchet
+- **Replay protection**: Message numbers prevent replay
+- **Out-of-order tolerance**: Bounded skipped key storage
+
+See [SECURE_ACCESS.md](SECURE_ACCESS.md) for the full protocol specification.
 
 ## PSA Secure Storage
 

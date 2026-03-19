@@ -28,6 +28,13 @@ pub use libcrux_secrets;
 /// See the module documentation for setup requirements.
 pub mod rng;
 
+/// Hash functions for key derivation and integrity.
+///
+/// Provides:
+/// - [`hash::sha256`] - SHA-256 hash (requires `xwing` feature)
+#[cfg(feature = "xwing")]
+pub mod hash;
+
 /// Post-quantum cryptography modules.
 ///
 /// Provides:

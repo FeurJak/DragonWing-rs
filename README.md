@@ -100,23 +100,26 @@ source .env && make run DEMO=pqc/psa
 ```
 DragonWing-rs/
 ├── crates/                      # Reusable libraries
-│   ├── dragonwing-crypto/       # PQ & classical cryptography
+│   ├── dragonwing-crypto/       # PQ & classical cryptography + PQ-Ratchet
+│   ├── dragonwing-secure-relayer/ # Secure data relay (macOS → Arduino)
 │   ├── dragonwing-led-matrix/   # 8x13 LED matrix driver
-│   ├── dragonwing-remote-iot/   # Arduino IoT Companion App integration
 │   ├── dragonwing-rpc/          # Cross-platform RPC
 │   ├── dragonwing-spi/          # SPI communication
 │   ├── dragonwing-spi-router/   # SPI router daemon
 │   └── dragonwing-zcbor/        # CBOR/COSE encoding
 ├── demos/
-│   ├── mcu/                     # MCU firmware demos
+│   ├── mcu/                     # MCU firmware demos (Zephyr + Rust)
+│   │   ├── secure-access/       # PQ-Ratchet secure data receiver
 │   │   ├── pqc-demo/            # Post-quantum showcase
 │   │   ├── led-matrix-demo/     # LED animations
 │   │   └── ...
-│   └── mpu/                     # Linux application demos
-│       ├── pqc-client/          # PQC demo controller
-│       ├── remote-iot/          # Phone camera streaming
-│       ├── weather-display/     # Weather on LED matrix
-│       └── ...
+│   ├── mpu/                     # Linux application demos (aarch64)
+│   │   ├── pq-proxy/            # WebSocket→SPI encrypted proxy
+│   │   ├── pqc-client/          # PQC demo controller
+│   │   ├── weather-display/     # Weather on LED matrix
+│   │   └── ...
+│   └── host/                    # Host machine demos (macOS/Linux x86_64)
+│       └── pq-relayer-demo/     # Test client for secure-relayer
 ├── docs/                        # Documentation
 ├── docker/                      # Zephyr build environment
 └── config/                      # Board configurations
@@ -128,6 +131,7 @@ DragonWing-rs/
 
 | Demo              | Description                                                             |
 | ----------------- | ----------------------------------------------------------------------- |
+| `secure-access`   | **PQ-Ratchet receiver** - Decrypts streaming data in TrustZone          |
 | `pqc-demo`        | Full cryptography showcase (ML-KEM, X-Wing, SAGA, Ed25519, PSA storage) |
 | `led-matrix-demo` | LED matrix animations and patterns                                      |
 | `mlkem-demo`      | ML-KEM 768 key encapsulation                                            |
@@ -135,13 +139,19 @@ DragonWing-rs/
 
 ### MPU Applications
 
-| App               | Description                                    |
-| ----------------- | ---------------------------------------------- |
-| `pqc-client`      | Control MCU demos via RPC                      |
-| `mlkem-client`    | ML-KEM key exchange client                     |
-| `remote-iot`      | Phone camera streaming via IoT Companion App   |
-| `weather-display` | Fetch weather and display on LED matrix        |
-| `spi-router`      | SPI router daemon (required for RPC)           |
+| App               | Description                                         |
+| ----------------- | --------------------------------------------------- |
+| `pq-proxy`        | **WebSocket→SPI proxy** - Forwards encrypted frames |
+| `pqc-client`      | Control MCU demos via RPC                           |
+| `mlkem-client`    | ML-KEM key exchange client                          |
+| `weather-display` | Fetch weather and display on LED matrix             |
+| `spi-router`      | SPI router daemon (required for RPC)                |
+
+### Host Applications
+
+| App               | Description                                            |
+| ----------------- | ------------------------------------------------------ |
+| `pq-relayer-demo` | Test client for secure-relayer handshake and streaming |
 
 ### Demo Commands
 
@@ -158,84 +168,65 @@ DragonWing-rs/
 ./pqc-client --mldsa-demo         # ML-DSA 65 (slow)
 ```
 
-## Phone Integration (Arduino IoT Companion App)
+## Secure Data Streaming (PQ-Ratchet)
 
-Stream video from your phone to the Arduino Uno Q using the [Arduino IoT Remote](https://play.google.com/store/apps/details?id=cc.arduino.iotremote) app.
+Stream encrypted data from phones to the Arduino Uno Q with **post-quantum forward secrecy**. The MCU decrypts data in TrustZone - the MPU (Linux) never sees plaintext.
+
+### Architecture
+
+```
+Phone (IoT App)                    Secure-Relayer (macOS)           Arduino Uno Q
+     │                                    │                              │
+     │  BPP encrypted frames              │                              │
+     ├───────────────────────────────────►│                              │
+     │                                    │  PQ-Ratchet re-encrypted     │
+     │                                    ├─────────────────────────────►│
+     │                                    │                         MPU (Linux)
+     │                                    │                              │ SPI
+     │                                    │                         MCU (TrustZone)
+     │                                    │                              │ Decrypt
+```
 
 ### Quick Start
 
 ```bash
-# Run the remote-iot demo
-cargo run -p remote-iot-demo
+# 1. Build and flash MCU firmware
+make build-mcu DEMO=secure-access
+make flash
 
-# Or with options
-cargo run -p remote-iot-demo -- --port 8080 --verbose
+# 2. Deploy proxy to MPU (on the board)
+cargo build --release -p pq-proxy --target aarch64-unknown-linux-gnu
+scp target/aarch64-unknown-linux-gnu/release/pq-proxy arduino@192.168.1.199:~/
+
+# 3. Start proxy on MPU
+ssh arduino@192.168.1.199 "./pq-proxy --listen 0.0.0.0:8080"
+
+# 4. Test from host
+cargo run -p pq-relayer-demo -- --url ws://192.168.1.199:8080 --handshake
 ```
 
-The demo will:
-1. Start a WebSocket camera server
-2. Display a QR code for the Arduino IoT Remote app to scan
-3. Receive encrypted video frames from your phone
+### Security Model
 
-### How It Works
-
-```mermaid
-sequenceDiagram
-    participant Phone as Phone (IoT App)
-    participant Server as Arduino Uno Q
-    
-    Note over Server: Generate 6-digit secret
-    Note over Server: Display QR code
-    Phone->>Server: Scan QR code
-    Phone->>Server: WebSocket connect (ws://ip:8080)
-    Server->>Phone: Welcome message (BPP encrypted)
-    loop Video Streaming
-        Phone->>Server: JPEG frame (BPP encrypted)
-        Note over Server: Decode & process frame
-    end
-```
+| Component              | Trust Level   | Has Keys?                        |
+| ---------------------- | ------------- | -------------------------------- |
+| Phone (IoT App)        | Untrusted     | BPP session key only             |
+| Secure-Relayer (macOS) | Trusted       | PQ-Ratchet keys (Secure Enclave) |
+| MPU (Linux)            | **Untrusted** | **None** - encrypted proxy only  |
+| MCU (TrustZone)        | Trusted       | PQ-Ratchet keys (ITS)            |
 
 ### Protocol Details
 
-The `dragonwing-remote-iot` crate implements the **BPP (Binary Peripheral Protocol)** used by Arduino's official tools:
+The `dragonwing-secure-relayer` crate implements **PQ-Ratchet**, a post-quantum Double Ratchet protocol:
 
-| Feature | Description |
-|---------|-------------|
-| Transport | WebSocket on port 8080 |
-| Security | ChaCha20-Poly1305 encryption with HMAC-SHA256 option |
-| Authentication | 6-digit shared secret |
-| Data Format | BPP-encoded JPEG frames |
+| Feature           | Description                                           |
+| ----------------- | ----------------------------------------------------- |
+| KEM               | X-Wing (ML-KEM-768 + X25519 hybrid)                   |
+| AEAD              | XChaCha20-Poly1305 (24-byte nonce)                    |
+| Forward Secrecy   | Per-epoch KEM ratchet + per-message symmetric ratchet |
+| Chunking          | 2KB chunks for SPI transport                          |
+| State Persistence | TrustZone ITS with lazy persistence                   |
 
-### API Usage
-
-```rust
-use dragonwing_remote_iot::{CameraServerBuilder, CameraEvent, QrGenerator};
-
-// Create camera server with encryption
-let camera = CameraServerBuilder::new()
-    .port(8080)
-    .use_encryption(true)
-    .build();
-
-// Display QR code
-println!("{}", QrGenerator::generate_camera_pairing_display(&camera));
-
-// Handle events
-let mut events = camera.subscribe();
-tokio::spawn(async move {
-    while let Ok(event) = events.recv().await {
-        match event {
-            CameraEvent::FrameReceived { size, .. } => {
-                println!("Got frame: {} bytes", size);
-            }
-            _ => {}
-        }
-    }
-});
-
-// Run server
-camera.run("0.0.0.0:8080".parse()?).await?;
-```
+See [docs/SECURE_ACCESS.md](docs/SECURE_ACCESS.md) for the full protocol specification.
 
 ## Cryptographic Algorithms
 

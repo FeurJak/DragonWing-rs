@@ -67,15 +67,15 @@
 //! let session = CredentialKeyExchange::complete(&device_state, &response)?;
 //! ```
 
+use crate::classical::xchacha20poly1305::{self, Key, Nonce};
+use crate::post_quantum::xwing::{
+    self, Ciphertext, PublicKey as XWingPubKey, SecretKey as XWingSk, SharedSecret,
+};
 #[cfg(test)]
 use crate::saga::Scalar;
 use crate::saga::{
     self, KeyPair as SagaKeyPair, Parameters, Point, Presentation, PublicKey as SagaPubKey, Tag,
     MAX_ATTRS,
-};
-use crate::classical::xchacha20poly1305::{self, Key, Nonce};
-use crate::post_quantum::xwing::{
-    self, Ciphertext, PublicKey as XWingPubKey, SecretKey as XWingSk, SharedSecret,
 };
 
 /// Error type for SAGA+X-Wing operations

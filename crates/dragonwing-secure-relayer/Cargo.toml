@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# DragonWing Secure Relayer
+#
+# This crate provides the Secure-Relayer component for the PQ-Ratchet
+# data streaming architecture. It runs on macOS and bridges the phone
+# (IoT App) to the Arduino MCU via the MPU proxy.
+#
+# Architecture:
+#   Phone (BPP) → Secure-Relayer (PQ-Ratchet) → MPU (proxy) → MCU (decrypt)
+
+[package]
+name = "dragonwing-secure-relayer"
+version = "0.1.0"
+edition = "2021"
+description = "Secure Relayer for PQ-Ratchet data streaming to Arduino Uno Q"
+license = "Apache-2.0 OR MIT"
+authors = ["DragonWing Team"]
+repository = "https://github.com/FeurJak/DragonWing-rs"
+keywords = ["post-quantum", "ratchet", "encryption", "arduino"]
+categories = ["cryptography", "network-programming"]
+
+[dependencies]
+# DragonWing crypto library
+dragonwing-crypto = { path = "../dragonwing-crypto", features = [
+    "std",
+    "xwing",
+    "xchacha20poly1305",
+    "pq_ratchet",
+] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# WebSocket client
+tokio-tungstenite = { version = "0.21", features = ["native-tls"] }
+futures-util = "0.3"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Random number generation
+rand = "0.8"
+
+# URL parsing
+url = "2.5"
+
+[dev-dependencies]
+tokio-test = "0.4"

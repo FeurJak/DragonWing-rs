@@ -45,3 +45,6 @@ docker/*.local
 # Temporary files
 *.tmp
 *.temp
+
+# Development notes (not for repo)
+.braindump/

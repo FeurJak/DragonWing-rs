@@ -12,21 +12,32 @@ members = [
     # Core crates (publishable to crates.io)
     "crates/dragonwing-crypto",
     "crates/dragonwing-led-matrix",
-    "crates/dragonwing-remote-iot",
+    # "crates/dragonwing-remote-iot",   # TODO: Create this crate
     "crates/dragonwing-rpc",
     "crates/dragonwing-spi",
     "crates/dragonwing-spi-router",
     "crates/dragonwing-zcbor",
+    "crates/dragonwing-secure-relayer",
+    # "crates/dragonwing-ble-bridge",     # TODO: Create this crate
+    # "crates/dragonwing-secure-access",  # TODO: Create this crate
 
     # MPU demos (QRB2210 Linux) - can be built with cargo
-    "demos/mpu/pqc-client",
-    "demos/mpu/mlkem-client",
-    "demos/mpu/remote-iot",
-    "demos/mpu/weather-display",
+    # "demos/mpu/pqc-client",           # TODO: Temporarily disabled
+    # "demos/mpu/mlkem-client",         # TODO: Temporarily disabled
+    # "demos/mpu/remote-iot",           # TODO: Temporarily disabled
+    # "demos/mpu/weather-display",      # TODO: Temporarily disabled
+    # "demos/mpu/ble-bridge",           # TODO: Create this demo
+    # "demos/mpu/secure-access-server", # TODO: Create this demo
+    # "demos/mpu/pq-proxy",             # Requires Linux spidev (cross-compile for MPU)
+
+    # Host demos (macOS) - can be built with cargo
+    # "demos/host/secure-access-client", # TODO: Create this demo
+    "demos/host/pq-relayer-demo",
 ]
 
 # MCU demos are excluded from workspace builds because they require Zephyr SDK
 # Build them with: make build-mcu DEMO=<demo-name>
+# MPU demos require Linux (for spidev) - cross-compile for QRB2210
 exclude = [
     "demos/mcu/pqc-demo",
     "demos/mcu/led-matrix-demo",
@@ -34,6 +45,8 @@ exclude = [
     "demos/mcu/rpc-server",
     "demos/mcu/mlkem-demo",
     "demos/mcu/spi-test",
+    "demos/mcu/secure-access",
+    "demos/mpu/pq-proxy",           # Requires Linux spidev
 ]
 
 # Exclude demos from default workspace builds (they have special build requirements)
@@ -55,6 +68,8 @@ dragonwing-rpc = { path = "crates/dragonwing-rpc", version = "0.1.0" }
 dragonwing-spi = { path = "crates/dragonwing-spi", version = "0.1.0" }
 dragonwing-spi-router = { path = "crates/dragonwing-spi-router", version = "0.1.0" }
 dragonwing-zcbor = { path = "crates/dragonwing-zcbor", version = "0.1.0" }
+dragonwing-ble-bridge = { path = "crates/dragonwing-ble-bridge", version = "0.1.0" }
+dragonwing-secure-access = { path = "crates/dragonwing-secure-access", version = "0.1.0" }
 
 # Post-quantum crypto (pinned commit for reproducibility)
 # Using FeurJak fork optimized for embedded systems

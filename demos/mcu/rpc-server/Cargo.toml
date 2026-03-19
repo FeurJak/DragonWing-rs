@@ -15,8 +15,10 @@ crate-type = ["staticlib"]
 [dependencies]
 zephyr = "0.1.0"
 log = "0.4"
-dragonwing-led-matrix = { path = "../../../crates/dragonwing-led-matrix" }
-dragonwing-rpc = { path = "../../../crates/dragonwing-rpc", features = ["mcu"] }
+# DragonWing crates
+# Note: Paths are rewritten by Makefile during Docker build
+dragonwing-led-matrix = { path = "../../crates/dragonwing-led-matrix" }
+dragonwing-rpc = { path = "../../crates/dragonwing-rpc", features = ["mcu"] }
 
 [build-dependencies]
 zephyr-build = "0.1.0"

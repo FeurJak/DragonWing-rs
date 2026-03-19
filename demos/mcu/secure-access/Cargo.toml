@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+#
+# Secure Access Demo - MCU firmware for Arduino Uno Q
+#
+# Implements Post-Quantum Double Ratchet protocol for secure data streaming:
+# - PQ-Ratchet state management in TrustZone ITS
+# - Chunk reassembly for large encrypted messages
+# - SAGA credential verification for session authorization
+# - X-Wing hybrid KEM for key exchange
+#
+# Architecture:
+#   Phone (IoT App) -> Secure-Relayer -> MPU (proxy) -> MCU (decrypt)
+#
+# The MPU acts as a "dumb proxy" that cannot decrypt frames - only the
+# MCU (TrustZone) can decrypt using the PQ-Ratchet session keys.
+
+[package]
+# Zephyr requires the package name to be "rustapp"
+name = "rustapp"
+version = "0.1.0"
+edition = "2021"
+description = "Secure Access demo with PQ-Ratchet for Arduino Uno Q"
+license = "Apache-2.0 OR MIT"
+authors = ["DragonWing Team"]
+
+[lib]
+crate-type = ["staticlib"]
+path = "src/lib.rs"
+
+[dependencies]
+# Zephyr RTOS bindings
+zephyr = "0.1.0"
+log = "0.4"
+
+# DragonWing libraries (paths are relative to build context - updated by build system)
+dragonwing-led-matrix = { path = "dragonwing-led-matrix" }
+dragonwing-rpc = { path = "dragonwing-rpc", features = ["mcu"] }
+dragonwing-crypto = { path = "dragonwing-crypto", features = [
+    "ed25519",
+    "xwing",
+    "xchacha20poly1305",
+    "saga",
+    "saga_xwing",
+    "psa",
+    "pq_ratchet",
+] }
+dragonwing-zcbor = { path = "dragonwing-zcbor", features = ["cose"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+debug = false
