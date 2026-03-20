@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# DragonWing I2C Library for Arduino Uno Q
+
+[package]
+name = "dragonwing-i2c"
+version = "0.1.0"
+edition = "2021"
+description = "I2C (Wire) driver for Arduino Uno Q using Zephyr RTOS"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/FeurJak/DragonWing-rs"
+keywords = ["arduino", "embedded", "i2c", "wire", "zephyr"]
+categories = ["embedded", "no-std", "hardware-support"]
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = []
+# Enable std for testing on host
+std = []
+
+[dependencies]
+# embedded-hal traits for I2C compatibility
+embedded-hal = "1.0"
+
+# Note: zephyr-build is provided by the Zephyr SDK when building MCU demos
+# It's not available from crates.io, so we don't list it here.
+# The MCU demo's build.rs handles Zephyr-specific configuration.

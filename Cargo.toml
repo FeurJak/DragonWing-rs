@@ -11,6 +11,7 @@ resolver = "2"
 members = [
     # Core crates (publishable to crates.io)
     "crates/dragonwing-crypto",
+    "crates/dragonwing-i2c",
     "crates/dragonwing-led-matrix",
     # "crates/dragonwing-remote-iot",   # TODO: Create this crate
     "crates/dragonwing-rpc",
@@ -46,6 +47,7 @@ exclude = [
     "demos/mcu/mlkem-demo",
     "demos/mcu/spi-test",
     "demos/mcu/secure-access",
+    "demos/mcu/ssd1306-demo",
     "demos/mpu/pq-proxy",           # Requires Linux spidev
 ]
 
@@ -62,6 +64,7 @@ categories = ["embedded", "cryptography", "no-std"]
 [workspace.dependencies]
 # Internal crates
 dragonwing-crypto = { path = "crates/dragonwing-crypto", version = "0.1.0" }
+dragonwing-i2c = { path = "crates/dragonwing-i2c", version = "0.1.0" }
 dragonwing-led-matrix = { path = "crates/dragonwing-led-matrix", version = "0.1.0" }
 dragonwing-remote-iot = { path = "crates/dragonwing-remote-iot", version = "0.1.0" }
 dragonwing-rpc = { path = "crates/dragonwing-rpc", version = "0.1.0" }

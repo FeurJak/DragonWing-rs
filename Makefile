@@ -163,6 +163,7 @@ build-mcu: check-docker .docker-image-built
 	@mkdir -p $(OUTPUT_DIR)
 	docker run --rm \
 		-v "$$(pwd)/crates/dragonwing-crypto:/lib-crypto:ro" \
+		-v "$$(pwd)/crates/dragonwing-i2c:/lib-i2c:ro" \
 		-v "$$(pwd)/crates/dragonwing-led-matrix:/lib-led-matrix:ro" \
 		-v "$$(pwd)/crates/dragonwing-rpc:/lib-rpc:ro" \
 		-v "$$(pwd)/crates/dragonwing-spi:/lib-spi:ro" \
@@ -176,22 +177,25 @@ build-mcu: check-docker .docker-image-built
 			cp -r /app /tmp/app && \
 			echo "Copying libraries..." && \
 			mkdir -p /tmp/app/dragonwing-crypto && \
+			mkdir -p /tmp/app/dragonwing-i2c && \
 			mkdir -p /tmp/app/dragonwing-led-matrix && \
 			mkdir -p /tmp/app/dragonwing-rpc && \
 			mkdir -p /tmp/app/dragonwing-spi && \
 			mkdir -p /tmp/app/dragonwing-zcbor && \
 			cp -r /lib-crypto/* /tmp/app/dragonwing-crypto/ 2>/dev/null || true && \
+			cp -r /lib-i2c/* /tmp/app/dragonwing-i2c/ 2>/dev/null || true && \
 			cp -r /lib-led-matrix/* /tmp/app/dragonwing-led-matrix/ 2>/dev/null || true && \
 			cp -r /lib-rpc/* /tmp/app/dragonwing-rpc/ 2>/dev/null || true && \
 			cp -r /lib-spi/* /tmp/app/dragonwing-spi/ 2>/dev/null || true && \
 			cp -r /lib-zcbor/* /tmp/app/dragonwing-zcbor/ 2>/dev/null || true && \
 			echo "Creating workspace Cargo.toml for standalone build..." && \
-			printf "[workspace]\nmembers = [\".\", \"dragonwing-crypto\", \"dragonwing-led-matrix\", \"dragonwing-rpc\", \"dragonwing-spi\", \"dragonwing-zcbor\"]\nresolver = \"2\"\n\n[workspace.package]\nversion = \"0.1.0\"\nedition = \"2021\"\nlicense = \"Apache-2.0 OR MIT\"\nrepository = \"https://github.com/FeurJak/DragonWing-rs\"\n\n[workspace.dependencies]\nlibcrux-iot-ml-kem = { git = \"https://github.com/FeurJak/libcrux-iot\", rev = \"e223df3b37aa76298716c02d77b4d8af96fd2111\", default-features = false }\nlibcrux-iot-ml-dsa = { git = \"https://github.com/FeurJak/libcrux-iot\", rev = \"e223df3b37aa76298716c02d77b4d8af96fd2111\", default-features = false }\nlibcrux-iot-sha3 = { git = \"https://github.com/FeurJak/libcrux-iot\", rev = \"e223df3b37aa76298716c02d77b4d8af96fd2111\" }\nlibcrux-secrets = \"0.0.5\"\ncurve25519-dalek = { version = \"4\", default-features = false, features = [\"alloc\", \"zeroize\"] }\nsha2 = { version = \"0.10\", default-features = false }\nrand_core = { version = \"0.6\", default-features = false }\nrmp-serde = \"1.3\"\nrmpv = { version = \"1.3\", features = [\"with-serde\"] }\nserde = { version = \"1.0\", default-features = false, features = [\"derive\"] }\nheapless = \"0.8\"\nlog = \"0.4\"\nthiserror = \"2.0\"\nanyhow = \"1.0\"\ntokio = { version = \"1\", features = [\"full\"] }\nclap = { version = \"4\", features = [\"derive\"] }\nenv_logger = \"0.11\"\ndragonwing-zcbor = { path = \"dragonwing-zcbor\" }\ndragonwing-spi = { path = \"dragonwing-spi\" }\ndragonwing-crypto = { path = \"dragonwing-crypto\" }\ndragonwing-led-matrix = { path = \"dragonwing-led-matrix\" }\ndragonwing-rpc = { path = \"dragonwing-rpc\" }\n\n" > /tmp/app/Cargo.toml.workspace && \
+			printf "[workspace]\nmembers = [\".\", \"dragonwing-crypto\", \"dragonwing-i2c\", \"dragonwing-led-matrix\", \"dragonwing-rpc\", \"dragonwing-spi\", \"dragonwing-zcbor\"]\nresolver = \"2\"\n\n[workspace.package]\nversion = \"0.1.0\"\nedition = \"2021\"\nlicense = \"Apache-2.0 OR MIT\"\nrepository = \"https://github.com/FeurJak/DragonWing-rs\"\n\n[workspace.dependencies]\nlibcrux-iot-ml-kem = { git = \"https://github.com/FeurJak/libcrux-iot\", rev = \"e223df3b37aa76298716c02d77b4d8af96fd2111\", default-features = false }\nlibcrux-iot-ml-dsa = { git = \"https://github.com/FeurJak/libcrux-iot\", rev = \"e223df3b37aa76298716c02d77b4d8af96fd2111\", default-features = false }\nlibcrux-iot-sha3 = { git = \"https://github.com/FeurJak/libcrux-iot\", rev = \"e223df3b37aa76298716c02d77b4d8af96fd2111\" }\nlibcrux-secrets = \"0.0.5\"\ncurve25519-dalek = { version = \"4\", default-features = false, features = [\"alloc\", \"zeroize\"] }\nsha2 = { version = \"0.10\", default-features = false }\nrand_core = { version = \"0.6\", default-features = false }\nrmp-serde = \"1.3\"\nrmpv = { version = \"1.3\", features = [\"with-serde\"] }\nserde = { version = \"1.0\", default-features = false, features = [\"derive\"] }\nheapless = \"0.8\"\nlog = \"0.4\"\nthiserror = \"2.0\"\nanyhow = \"1.0\"\ntokio = { version = \"1\", features = [\"full\"] }\nclap = { version = \"4\", features = [\"derive\"] }\nenv_logger = \"0.11\"\nembedded-hal = \"1.0\"\ndragonwing-zcbor = { path = \"dragonwing-zcbor\" }\ndragonwing-spi = { path = \"dragonwing-spi\" }\ndragonwing-crypto = { path = \"dragonwing-crypto\" }\ndragonwing-i2c = { path = \"dragonwing-i2c\" }\ndragonwing-led-matrix = { path = \"dragonwing-led-matrix\" }\ndragonwing-rpc = { path = \"dragonwing-rpc\" }\n\n" > /tmp/app/Cargo.toml.workspace && \
 			head -n 1 /tmp/app/Cargo.toml > /tmp/app/Cargo.toml.new && \
 			cat /tmp/app/Cargo.toml.workspace >> /tmp/app/Cargo.toml.new && \
 			tail -n +2 /tmp/app/Cargo.toml >> /tmp/app/Cargo.toml.new && \
 			mv /tmp/app/Cargo.toml.new /tmp/app/Cargo.toml && \
 			sed -i "s|path = \"../../crates/dragonwing-crypto\"|path = \"dragonwing-crypto\"|g" /tmp/app/Cargo.toml 2>/dev/null || true && \
+			sed -i "s|path = \"../../crates/dragonwing-i2c\"|path = \"dragonwing-i2c\"|g" /tmp/app/Cargo.toml 2>/dev/null || true && \
 			sed -i "s|path = \"../../crates/dragonwing-led-matrix\"|path = \"dragonwing-led-matrix\"|g" /tmp/app/Cargo.toml 2>/dev/null || true && \
 			sed -i "s|path = \"../../crates/dragonwing-rpc\"|path = \"dragonwing-rpc\"|g" /tmp/app/Cargo.toml 2>/dev/null || true && \
 			sed -i "s|path = \"../../crates/dragonwing-spi\"|path = \"dragonwing-spi\"|g" /tmp/app/Cargo.toml 2>/dev/null || true && \

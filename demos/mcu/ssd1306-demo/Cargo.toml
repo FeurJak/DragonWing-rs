@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# SSD1306 OLED Display Demo for Arduino Uno Q
+
+[package]
+# This must be rustapp for now (required by Zephyr build system).
+name = "rustapp"
+version = "0.1.0"
+edition = "2021"
+description = "SSD1306 OLED display demo on Arduino Uno Q using Rust and Zephyr RTOS"
+license = "Apache-2.0 OR MIT"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+zephyr = "0.1.0"
+log = "0.4.22"
+dragonwing-i2c = { path = "../../crates/dragonwing-i2c" }
+# SSD1306 OLED display driver from crates.io
+ssd1306 = { version = "0.10", default-features = false, features = ["graphics"] }
+embedded-graphics = "0.8"
+embedded-hal = "1.0"
+
+[build-dependencies]
+zephyr-build = "0.1.0"

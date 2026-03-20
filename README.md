@@ -24,12 +24,7 @@
 
 
 Rust libraries for the Arduino Uno Q platform
-featuring:
-
-* Post-Quantum Cryptography
-* Anonymous credentials
-* Secure storage
-* Phone integration via Arduino IoT Companion App
+featuring
 ```
 
 ## Features

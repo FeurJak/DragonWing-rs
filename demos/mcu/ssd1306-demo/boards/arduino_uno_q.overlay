@@ -1,0 +1,23 @@
+/*
+ * Device Tree Overlay for Arduino Uno Q SSD1306 Demo
+ *
+ * This overlay enables I2C2 (Wire) for the SSD1306 OLED display.
+ * Connect the display to the Arduino header I2C pins:
+ *   - SDA: PB11 (D20)
+ *   - SCL: PB10 (D21)
+ *   - VCC: 3.3V
+ *   - GND: GND
+ *
+ * Default I2C address for SSD1306: 0x3C (or 0x3D with SA0 high)
+ */
+
+/* Enable I2C2 for Wire (Arduino header) */
+&i2c2 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;  /* 400 kHz */
+};
+
+/* Also keep I2C4 available if needed */
+&i2c4 {
+	status = "okay";
+};

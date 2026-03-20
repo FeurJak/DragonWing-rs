@@ -48,3 +48,4 @@ docker/*.local
 
 # Development notes (not for repo)
 .braindump/
+.tasks/
