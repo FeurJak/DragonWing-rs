@@ -51,7 +51,8 @@ NC := \033[0m
 
 .PHONY: all help build-mcu flash build-mpu deploy run demo demo-list \
         docker-build docker-shell clean serial ssh ping version setup-spi-router setup-ble-bridge \
-        sync-to-board remote-build-mpu remote-install remote-start remote-setup
+        sync-to-board remote-build-mpu remote-install remote-start remote-setup \
+        display-demo run-display-demo deploy-display-demo
 
 # ==============================================================================
 # Help
@@ -75,11 +76,13 @@ help:
 	@echo "  mlkem-demo      - ML-KEM 768 demo"
 	@echo "  spi-test        - SPI communication test"
 	@echo "  secure-access   - Secure Access responder (SAGA+X-Wing)"
+	@echo "  display-server  - Display server (SSD1306 OLED + LED Matrix)"
 	@echo ""
 	@echo "$(GREEN)MPU Apps (QRB2210, Linux):$(NC)"
 	@echo "  pqc-client      - PQC demo client"
 	@echo "  mlkem-client    - ML-KEM client"
 	@echo "  weather-display - Weather on LED matrix"
+	@echo "  system-monitor  - System monitor for display-server"
 	@echo "  spi-router      - SPI router daemon"
 	@echo "  ble-bridge      - BLE bridge for Secure Access"
 	@echo "  remote-iot      - Phone camera streaming"
@@ -93,6 +96,12 @@ help:
 	@echo "  make run DEMO=pqc/ed25519     - Ed25519 signatures"
 	@echo "  make run DEMO=pqc/x25519      - X25519 key exchange"
 	@echo "  make run DEMO=pqc/xchacha20   - XChaCha20-Poly1305 AEAD"
+	@echo ""
+	@echo "$(GREEN)Display Demo (SSD1306 OLED + LED Matrix):$(NC)"
+	@echo "  make display-demo             - Full workflow: build, flash, deploy, run"
+	@echo "  make display-demo MODE=monitor- Run system monitoring instead of demo"
+	@echo "  make display-test             - Quick test (assumes firmware flashed)"
+	@echo "  make run-display-demo         - Run demo on board"
 	@echo ""
 	@echo "$(GREEN)Utility Commands:$(NC)"
 	@echo "  make serial                   - Open serial console"
@@ -504,6 +513,87 @@ setup-ble-bridge-native: check-ssh
 		echo '$(BOARD_PASS)' | sudo -S apt-get install -y libdbus-1-dev pkg-config"
 	$(MAKE) remote-setup APP=ble-bridge FEATURES=bluez
 	@echo "$(GREEN)BLE bridge service installed with BlueZ support$(NC)"
+
+# ==============================================================================
+# Display Server Demo (SSD1306 OLED + LED Matrix)
+# ==============================================================================
+
+# Path to arduino-rpc-client (external dependency)
+ARDUINO_RPC_CLIENT_PATH := $(shell cd .. && pwd)/arduino-libraries-rust/arduino-rpc-client
+
+# Build system-monitor MPU app
+# Note: Requires arduino-rpc-client from arduino-libraries-rust repo
+build-display-monitor:
+	@echo "$(CYAN)Building system-monitor...$(NC)"
+	@test -d "$(ARDUINO_RPC_CLIENT_PATH)" || { echo "$(RED)Error: arduino-rpc-client not found at $(ARDUINO_RPC_CLIENT_PATH)$(NC)"; exit 1; }
+	cd demos/mpu/system-monitor && cargo build --release
+	@echo "$(GREEN)Build complete: demos/mpu/system-monitor/target/release/system-monitor$(NC)"
+
+# Cross-compile system-monitor for aarch64 (QRB2210)
+build-display-monitor-cross: check-zigbuild
+	@echo "$(CYAN)Cross-compiling system-monitor for aarch64...$(NC)"
+	@test -d "$(ARDUINO_RPC_CLIENT_PATH)" || { echo "$(RED)Error: arduino-rpc-client not found at $(ARDUINO_RPC_CLIENT_PATH)$(NC)"; exit 1; }
+	cd demos/mpu/system-monitor && cargo zigbuild --target $(LINUX_TARGET) --release
+	@echo "$(GREEN)Build complete: demos/mpu/system-monitor/target/$(LINUX_TARGET)/release/system-monitor$(NC)"
+
+# Deploy system-monitor to board via ADB
+deploy-display-demo: check-adb
+	@echo "$(CYAN)Deploying system-monitor to board...$(NC)"
+	@test -f demos/mpu/system-monitor/target/$(LINUX_TARGET)/release/system-monitor || \
+		test -f demos/mpu/system-monitor/target/release/system-monitor || \
+		{ echo "$(RED)Error: Binary not found. Run 'make build-display-monitor-cross' first.$(NC)"; exit 1; }
+	@if [ -f demos/mpu/system-monitor/target/$(LINUX_TARGET)/release/system-monitor ]; then \
+		adb push demos/mpu/system-monitor/target/$(LINUX_TARGET)/release/system-monitor /home/arduino/system-monitor; \
+	else \
+		adb push demos/mpu/system-monitor/target/release/system-monitor /home/arduino/system-monitor; \
+	fi
+	adb shell "chmod +x /home/arduino/system-monitor"
+	@echo "$(GREEN)Deployed to /home/arduino/system-monitor$(NC)"
+
+# Run display demo on the board
+# Usage: make run-display-demo [MODE=demo|monitor]
+MODE ?= demo
+run-display-demo: check-adb
+	@echo "$(CYAN)Running display demo (mode: $(MODE))...$(NC)"
+ifeq ($(MODE),demo)
+	adb shell "/home/arduino/system-monitor --demo --once"
+else ifeq ($(MODE),loop)
+	adb shell "/home/arduino/system-monitor --demo"
+else
+	adb shell "/home/arduino/system-monitor --interval 1000"
+endif
+
+# Full display demo workflow: build MCU, flash, build MPU, deploy, run
+# Usage: make display-demo
+#        make display-demo MODE=monitor  (for system monitoring instead of demo)
+display-demo: check-adb
+	@echo "$(CYAN)Running full display demo workflow...$(NC)"
+	@echo ""
+	@echo "Step 1/4: Building display-server MCU firmware..."
+	$(MAKE) build-mcu DEMO=display-server
+	@echo ""
+	@echo "Step 2/4: Flashing MCU firmware..."
+	$(MAKE) flash
+	@echo ""
+	@echo "Step 3/4: Building and deploying system-monitor..."
+	$(MAKE) build-display-monitor-cross
+	$(MAKE) deploy-display-demo
+	@echo ""
+	@echo "Step 4/4: Running demo..."
+	@echo "$(YELLOW)Note: Make sure SPI router is running on the board!$(NC)"
+	@echo "$(YELLOW)      Run 'adb shell arduino-spi-router &' if needed$(NC)"
+	@echo ""
+	$(MAKE) run-display-demo MODE=$(MODE)
+	@echo ""
+	@echo "$(GREEN)Display demo complete!$(NC)"
+
+# Quick display test (assumes firmware already flashed)
+# Usage: make display-test
+display-test: check-adb
+	@echo "$(CYAN)Quick display test...$(NC)"
+	$(MAKE) build-display-monitor-cross
+	$(MAKE) deploy-display-demo
+	$(MAKE) run-display-demo MODE=demo
 
 # ==============================================================================
 # Clean

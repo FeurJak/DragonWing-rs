@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# System Monitor - Linux application for Arduino Uno Q Display Server
+#
+# Reads system metrics and displays them on SSD1306 OLED and LED Matrix.
+
+[package]
+name = "system-monitor"
+version = "0.1.0"
+edition = "2021"
+description = "Display system metrics on Arduino Uno Q via RPC"
+license = "Apache-2.0 OR MIT"
+
+[[bin]]
+name = "system-monitor"
+path = "src/main.rs"
+
+[dependencies]
+# RPC client (from arduino-libraries-rust)
+arduino-rpc-client = { path = "../../../../arduino-libraries-rust/arduino-rpc-client" }
+
+# MessagePack values
+rmpv = "1.3"
+
+# System info
+sysinfo = "0.33"
+
+# Error handling
+anyhow = "1.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# CLI arguments
+clap = { version = "4.5", features = ["derive"] }

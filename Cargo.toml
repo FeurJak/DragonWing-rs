@@ -47,8 +47,9 @@ exclude = [
     "demos/mcu/mlkem-demo",
     "demos/mcu/spi-test",
     "demos/mcu/secure-access",
-    "demos/mcu/ssd1306-demo",
+    "demos/mcu/display-server",
     "demos/mpu/pq-proxy",           # Requires Linux spidev
+    "demos/mpu/system-monitor",     # Requires arduino-rpc-client from external repo
 ]
 
 # Exclude demos from default workspace builds (they have special build requirements)

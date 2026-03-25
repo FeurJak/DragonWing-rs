@@ -4,6 +4,12 @@
 //
 // This module contains types and constants shared between MCU and MPU sides.
 
+// no_std compatibility: import core types
+#[cfg(all(feature = "mcu", not(feature = "std")))]
+use core::convert::{From, TryFrom};
+#[cfg(all(feature = "mcu", not(feature = "std")))]
+use core::result::Result::{self, Err, Ok};
+
 /// RPC message types as defined in MessagePack-RPC spec
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]

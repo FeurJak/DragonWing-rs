@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
-# SSD1306 OLED Display Demo for Arduino Uno Q
+# Display Server for Arduino Uno Q
+# RPC server controlling both SSD1306 OLED and LED Matrix
 
 [package]
 # This must be rustapp for now (required by Zephyr build system).
 name = "rustapp"
 version = "0.1.0"
 edition = "2021"
-description = "SSD1306 OLED display demo on Arduino Uno Q using Rust and Zephyr RTOS"
+description = "Display server for SSD1306 OLED and LED Matrix via RPC"
 license = "Apache-2.0 OR MIT"
 
 [lib]
@@ -15,9 +16,15 @@ crate-type = ["staticlib"]
 [dependencies]
 zephyr = "0.1.0"
 log = "0.4.22"
+# I2C for SSD1306
 dragonwing-i2c = { path = "../../crates/dragonwing-i2c" }
-# SSD1306 OLED display driver from crates.io
+# LED Matrix driver
+dragonwing-led-matrix = { path = "../../crates/dragonwing-led-matrix" }
+# RPC server (SPI transport)
+dragonwing-rpc = { path = "../../crates/dragonwing-rpc", features = ["mcu"] }
+# SSD1306 OLED driver
 ssd1306 = { version = "0.10", default-features = false, features = ["graphics"] }
+# Graphics primitives
 embedded-graphics = "0.8"
 embedded-hal = "1.0"
 

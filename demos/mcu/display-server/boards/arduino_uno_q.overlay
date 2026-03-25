@@ -1,0 +1,54 @@
+/*
+ * Device Tree Overlay for Arduino Uno Q Display Server
+ *
+ * This overlay enables:
+ * 1. I2C2 (Wire) for the SSD1306 OLED display
+ * 2. SPI3 peripheral (slave) for RPC communication with Linux MPU
+ * 3. TIM17 counter for LED matrix multiplexing
+ *
+ * SSD1306 OLED Connection (I2C):
+ *   - SDA: PB11 (D20)
+ *   - SCL: PB10 (D21)
+ *   - VCC: 3.3V
+ *   - GND: GND
+ *   - I2C Address: 0x3C (or 0x3D with SA0 high)
+ *
+ * Display Characteristics (128x64 yellow/blue):
+ *   - Top 16 rows: Yellow pixels
+ *   - Bottom 48 rows: Blue pixels
+ */
+
+/* Enable I2C2 for Wire (Arduino header) - SSD1306 display */
+&i2c2 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;  /* 400 kHz */
+};
+
+/* Keep I2C4 available for secondary devices */
+&i2c4 {
+	status = "okay";
+};
+
+/* Add SPI slave device to SPI3 for RPC communication */
+&spi3 {
+	device0: device@0 {
+		compatible = "zephyr,spi-slave";
+		reg = <0>;
+		zephyr,deferred-init;
+	};
+};
+
+/* Enable TIM17 counter for LED matrix timing */
+&timers17 {
+	status = "okay";
+	st,prescaler = <4>;
+
+	counter_matrix: counter {
+		status = "okay";
+		label = "LED_MATRIX_COUNTER";
+	};
+};
+
+/* LED matrix uses GPIO port F pins PF0-PF10 for charlieplexing.
+ * These are configured in the zephyr,user node in the base board DTS.
+ */
